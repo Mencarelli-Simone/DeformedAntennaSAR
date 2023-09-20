@@ -1,4 +1,10 @@
+# Simone Mencarelli
+# September 2023
+# This script loads in memory an antenna pattern from a CST ffs (far field source) file.
+# the content of this file is to be integrated in an antenna class
+
 # %% Includes section
+import matplotlib.pyplot as plt
 import numpy as np
 
 # %% User input
@@ -60,4 +66,29 @@ for i in range(len(content)):
             dataline = np.array(dataline[0:6], dtype=float).reshape((1, 6))
             dataMatrix[j, :] = dataline
 
-# %% find the gain patterns copolar and crosspolar from the data and compare with CST
+# %% turn the data into meshgrids
+# theta component
+E_Theta = dataMatrix[:, 2] + 1j * dataMatrix[:, 3]
+E_Theta = E_Theta.reshape((phiSamples, thetaSamples))
+# phi component
+E_Phi = dataMatrix[:, 4] + 1j * dataMatrix[:, 5]
+E_Phi = E_Phi.reshape((phiSamples, thetaSamples))
+# coordinates
+Phi = dataMatrix[:, 0]
+Phi = Phi.reshape((phiSamples, thetaSamples))
+Theta = dataMatrix[:, 1]
+Theta = Theta.reshape((phiSamples, thetaSamples))
+
+# plot
+fig, ax = plt.subplots(1)
+ax.contourf(Theta, Phi, 10 * np.log10(np.abs(E_Theta ** 2 + E_Phi ** 2)))
+plt.show()
+
+# %% we assume the cross polarization has no effect and define the directive gain as
+
+G = 2 * np.pi * (np.abs(E_Theta) ** 2 + np.abs(E_Phi) ** 2) / (120 * np.pi * radiatedPower)
+fig, ax = plt.subplots(1)
+ax.contourf(Theta, Phi, 10 * np.log10(G))
+plt.show()
+
+# todo make this available for the snr and impulse response

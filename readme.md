@@ -14,3 +14,9 @@ SAR performance evaluation.
 - **deformedAntennaAIR:** (Azimuth impulse response)
 
 - TBD SNR stuff
+
+
+## dependencies
+the *radartools* folder is copied from the design-baseline project.
+it contains some functions and objects useful to modelling the 
+geometry and set the radar parameters.
