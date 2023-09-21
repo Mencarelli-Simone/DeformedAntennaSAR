@@ -87,7 +87,7 @@ def ffsLoader(filename):
 
 # Aperture class for interfacing cst pattern
 class Aperture:
-    def init(self, filename):
+    def __init__(self, filename):
         """
         initialization method, it requires a far field file
         :param filename: CST ffs file
@@ -98,13 +98,22 @@ class Aperture:
          radiatedPower, stimulatedPower, acceptedPower) = ffsLoader(filename)
 
         # compute directive gain
-        self.G = 2 * np.pi * (np.abs(E_Theta) ** 2 + np.abs(E_Phi) ** 2) / (120 * np.pi * radiatedPower)
+        self.G = np.array(
+            2 * np.pi * (np.abs(E_Theta) ** 2 + np.abs(E_Phi) ** 2) / (120 * np.pi * radiatedPower),
+            dtype=float)
 
         # store relevant parameters
         self.Theta = Theta * np.pi / 180  # I use radians
         self.Phi = Phi * np.pi / 180
         self.phiSamples = phiSamples
         self.thetaSamples = thetaSamples
+        # 3 compile the interpolator function
+        theta = np.linspace(0, np.pi, 5)
+        phi = np.linspace(0, 2 * np.pi, 6)
+        T, P = np.meshgrid(theta, phi)
+        print('compiling')
+        ginterp = self.mesh_gain_pattern(T, P, cubic=True)
+        print('done')
 
     def mesh_gain_pattern(self, theta_mesh: np.ndarray, phi_mesh: np.ndarray, cubic=True):
         """
@@ -115,12 +124,41 @@ class Aperture:
         :return:
         """
         # need to create an outpattern for some reason
-        outpattern = np.zeros_like(theta_mesh).reshape(-1)
-        # The vectors need to be flattened hence reshape(-1)
+        outpattern = np.zeros_like(theta_mesh).reshape(-1).astype('float')
+        # theta and phi axes (origins of the meshgrid, non-uniform sampling not allowed)
+        theta = self.Theta[0, :].reshape(-1)
+        phi = self.Phi[:, 0].reshape(-1)
+        # The vectors need to be flattened hence reshape(-1) except pattern
         outpattern = sphere_interp(theta_mesh.reshape(-1), phi_mesh.reshape(-1),
-                                   self.Theta.reshape(-1), self.Phi.reshape(-1),
-                                   self.G.reshape(-1), outpattern, cubic)
+                                   theta, phi,
+                                   self.G.T, outpattern, cubic)
         # reshape to desired format
         return outpattern.reshape(np.shape(theta_mesh))
 
-    # %% todo testing
+
+# %% testing
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+
+    # 1 create an aperture with the farfield file
+    antenna = Aperture('farfield.ffs')
+    #  Pass
+
+    # 2 plot the original datum
+    fig, ax = plt.subplots(1)
+    ax.contourf(antenna.Theta, antenna.Phi, 10 * np.log10(antenna.G), levels=np.linspace(-50, 16, 100))
+    plt.show()
+    # Pass
+
+    # 3 create a second meshgrid
+    theta = np.linspace(0, np.pi, 1920)
+    phi = np.linspace(0, 2 * np.pi, 1080)
+    T, P = np.meshgrid(theta, phi)
+    ginterp = antenna.mesh_gain_pattern(T, P, cubic=True)
+    # Pass
+
+    # 4 plot the output
+    fig, ax = plt.subplots(1)
+    ax.contourf(T, P, 10 * np.log10(ginterp), levels=np.linspace(-50, 16, 100))
+    plt.show()
+    # Fail it doesn't produce the correct output

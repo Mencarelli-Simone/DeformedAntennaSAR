@@ -91,4 +91,4 @@ fig, ax = plt.subplots(1)
 ax.contourf(Theta, Phi, 10 * np.log10(G))
 plt.show()
 
-# todo make this available for the snr and impulse response
+# make this available for the snr and impulse response
