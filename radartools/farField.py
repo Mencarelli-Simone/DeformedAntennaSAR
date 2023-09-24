@@ -1,5 +1,8 @@
 # by Simone Mencarelli
 # created on 28.01.2022
+# the following file has been modified for the current project
+# Sept 2023
+# some things are working some things aren't, test before use.
 
 ##################### DEPENDENCIES ####################
 
@@ -11,7 +14,7 @@ from scipy import integrate
 
 ################### NUMBA FUNCTIONS ###################
 
-@jit(nopython=True, parallel=True)
+# @jit(nopython=False, parallel=True)  # jit decided to not work on this one
 def jmesh_field_transform(Theta: np.ndarray, Phi: np.ndarray, l_mesh: np.ndarray, w_mesh: np.ndarray,
                           tanEField: np.ndarray, f: np.ndarray, tmp: np.ndarray, c: float, k) -> np.ndarray:
     """
@@ -25,13 +28,14 @@ def jmesh_field_transform(Theta: np.ndarray, Phi: np.ndarray, l_mesh: np.ndarray
     :return: the far field over f
     """
     # far field meshgrid (defined outside)
-    #f = 1j * np.zeros_like(Theta)
+    # f = 1j * np.zeros_like(Theta)
     # aperture coordinates meshgrid
     X = l_mesh
     Y = w_mesh
     integrand = 1j * np.zeros_like(X)
     rows = integrand.shape[0]
     columns = integrand.shape[1]
+    f = 1j * np.zeros_like(f)
 
     # field fourier transforms
     # [Orfanidis - Electromagnetic Waves and Antennas - ch 18]
@@ -42,21 +46,20 @@ def jmesh_field_transform(Theta: np.ndarray, Phi: np.ndarray, l_mesh: np.ndarray
         integrand = tanEField * exp(1j * kx * X + 1j * ky * Y)
 
         # temporary array to hold the inner integral values
-        #tmp = 1j * np.zeros(rows)
+        tmp = 1j * np.zeros_like(tmp)
         # inner integral loop
         for ii in prange(rows):
             tmp[ii] = np.trapz(
-                            integrand[ii, :],
-                            l_mesh[ii, :].astype(np.float64)     # dx
-                        )
+                integrand[ii, :],
+                l_mesh[ii, :].astype('float')  # dx
+            )
         # outer integral
         f[it, ip] = np.trapz(
-                        tmp,
-                        w_mesh.T[0, :].astype(np.float64)       # dy
-                        )
+            tmp,
+            w_mesh.T[0, :].astype('float')  # dy
+        )
 
     return f
-
 
 
 #################### PROBLEM GEOMETRY #################
@@ -93,8 +96,8 @@ class Aperture:
         self.freq = frequency  # [Hz]
         # light speed
         self.c = 299792458  # [m]
-        # wave number
-        self.k = 2 * np.pi * self.freq / self.c # note, k can be changed in case of a slant plane wave
+        # wave number free space
+        self.k = 2 * np.pi * self.freq / self.c
         # input power for normalization of the intensity pattern
         self.inputPower = 1  # [W]
         # free space impedance
@@ -133,7 +136,7 @@ class Aperture:
         w_points = np.ceil(self.W / delta_w).astype(int)
         self.set_uniform_mesh(l_points, w_points)
 
-    def theor_rect_field_transform(self, theta_mesh: np.ndarray, phi_mesh: np.ndarray)-> np.ndarray:
+    def theor_rect_field_transform(self, theta_mesh: np.ndarray, phi_mesh: np.ndarray) -> np.ndarray:
         """
         generate and return the far field (aperture fourier transform) over a spherical coordinates grid
         only one linear polarization at a time can be computed. The sources is assumed to be
@@ -149,7 +152,8 @@ class Aperture:
         f = sin(kx * self.L / 2) / (kx * self.L / 2) * sin(ky * self.W / 2) / (ky * self.W / 2) * self.L * self.W
         return theta_mesh, phi_mesh, f
 
-    def field_transform(self, theta: np.ndarray, phi: np.ndarray, interpolation="simpson", polarization= "y" ) -> np.ndarray:
+    def field_transform(self, theta: np.ndarray, phi: np.ndarray, interpolation="simpson",
+                        polarization="y") -> np.ndarray:
         """
         generate and return the far field (aperture fourier transform) over a spherical coordinates grid
         only one linear polarization at a time can be computed. The sources is assumed to be
@@ -203,7 +207,7 @@ class Aperture:
         self.f = f
         return Theta, Phi, f
 
-    def mesh_field_transform(self, theta_mesh: np.ndarray, phi_mesh: np.ndarray, polarization= "y") -> np.ndarray:
+    def mesh_field_transform(self, theta_mesh: np.ndarray, phi_mesh: np.ndarray, polarization="y") -> np.ndarray:
         """
         performs the far field transform over a 2-d meshgrid
         :param theta_mesh: theta points meshgrid
@@ -211,6 +215,11 @@ class Aperture:
         :param polarization: optional x or y
         :return: far field
         """
+        # spherical coordinates rearranged for negative theta
+        phi_mesh = np.where(theta_mesh < 0, phi_mesh + np.pi, phi_mesh)
+        theta_mesh = np.abs(theta_mesh)
+        # todo use pythonic initializations here (it works as it is, but perhaps
+        # it can make jit work)
         # initialize the far field vector
         f = 1j * np.zeros_like(theta_mesh)
         # meshgrid for aperture sampling
@@ -245,7 +254,7 @@ class UniformAperture(Aperture):
     def set_width(self, width):
         self.__init__(self.L, width, self.freq)
 
-    def gain_pattern(self, theta: np.ndarray, phi: np.ndarray, interpolation="simpson", polarization = "y"):
+    def gain_pattern(self, theta: np.ndarray, phi: np.ndarray, interpolation="simpson", polarization="y"):
         """
         calculate the gain for a hiuygenes source
         :param theta: elevation points
@@ -255,20 +264,20 @@ class UniformAperture(Aperture):
         :return: matrix containing the theta-phi complex values of the far-field pattern
         """
         self.Theta, self.Phi, self.f = self.field_transform(theta, phi, interpolation, polarization)
-        # obliquity factors for phased apertures need to be changed
-        c_t = 1/2 * (np.ones_like(self.Theta) + cos(self.Theta))
-        c_p = 1/2 * (np.ones_like(self.Theta) + cos(self.Theta))
+        # obliquity factors for Huygens source
+        c_t = 1 / 2 * (np.ones_like(self.Theta) + cos(self.Theta))
+        c_p = 1 / 2 * (np.ones_like(self.Theta) + cos(self.Theta))
         if polarization == "x":
-            u = self.k**2 / (8 * np.pi**2 * self.eta) * (c_t.T**2 * self.f**2)
+            u = self.k ** 2 / (8 * np.pi ** 2 * self.eta) * (c_t.T ** 2 * self.f ** 2)
         if polarization == "y":
-            u = self.k**2 / (8 * np.pi**2 * self.eta) * (c_t.T**2 * self.f**2)
+            u = self.k ** 2 / (8 * np.pi ** 2 * self.eta) * (c_t.T ** 2 * self.f ** 2)
             # no difference in this case
         else:
             print("Error, polarization shall be either x or y")
-        self.g = np.abs(u) * self.eta * 8 * np.pi / (self.W*self.L)
+        self.g = np.abs(u) * self.eta * 8 * np.pi / (self.W * self.L)
         return self.g
 
-    def mesh_gain_pattern(self, theta_mesh: np.ndarray, phi_mesh: np.ndarray, polarization = "y"):
+    def mesh_gain_pattern(self, theta_mesh: np.ndarray, phi_mesh: np.ndarray, polarization="y"):
         """
         calculate the gain for a hiuygenes source
         :param theta: elevation points
@@ -278,14 +287,14 @@ class UniformAperture(Aperture):
         :return: matrix containing the theta-phi complex values of the far-field pattern
         """
         self.Theta, self.Phi, self.f = self.mesh_field_transform(theta_mesh, phi_mesh, polarization)
-        # obliquity factors for phased apertures need to be changed
-        c_t = 1/2 * (np.ones_like(self.Theta) + cos(self.Theta))
-        c_p = 1/2 * (np.ones_like(self.Theta) + cos(self.Theta))
+        # obliquity factors for Huygens source, differences in polarization come in the cas e of PEC or PMC apertures
+        c_t = 1 / 2 * (np.ones_like(self.Theta) + cos(self.Theta))
+        c_p = 1 / 2 * (np.ones_like(self.Theta) + cos(self.Theta))
         # c_phi and c_theta are different for modified hiuygenes sources
         if polarization == "x":
-            u = (self.k**2 / (8 * np.pi**2 * self.eta)) * (c_t**2 * self.f**2)
+            u = (self.k ** 2 / (8 * np.pi ** 2 * self.eta)) * (c_t ** 2 * self.f ** 2)
         if polarization == "y":
-            u = (self.k**2 / (8 * np.pi**2 * self.eta)) * (c_t**2 * self.f**2)
+            u = (self.k ** 2 / (8 * np.pi ** 2 * self.eta)) * (c_t ** 2 * self.f ** 2)
             # no difference in this case: simplify eq 18.6.3 to single pol non steered
         else:
             print("Error, polarization shall be either x or y")
@@ -295,7 +304,43 @@ class UniformAperture(Aperture):
 
         return self.g
 
-    def mesh_gain_pattern_theor(self, theta_mesh: np.ndarray, phi_mesh: np.ndarray, polarization = "y"):
+    def mesh_E_field(self, theta_mesh: np.ndarray, phi_mesh: np.ndarray, polarization="y"):
+        """
+        retruns the E field in theta and phi coordinates.
+        see eq. 18.5.3 of Orfanidis, Electromagnetic waves and Antennas
+        the range is assumed to be 1 m
+        :param theta_mesh:
+        :param phi_mesh:
+        :param polarization: orientation of E field on the aperture
+        :return: E_theta, E_phi
+        """
+        self.Theta, self.Phi, self.f = self.mesh_field_transform(theta_mesh, phi_mesh, polarization)
+        # obliquity factors for Huygens source, differences in polarization come in the cas e of PEC or PMC apertures
+        c_t = 1 / 2 * (np.ones_like(self.Theta) + cos(self.Theta))
+        c_p = 1 / 2 * (np.ones_like(self.Theta) + cos(self.Theta))
+        # c_phi and c_theta are different for modified huygenes sources (different source impedance)
+        if polarization == "x":
+            E_theta = 1j * self.k * exp(-1j * self.k) / (2 * np.pi) * c_t * (self.f * np.cos(self.Phi))
+            E_phi = 1j * self.k * exp(-1j * self.k) / (2 * np.pi) * c_p * (- self.f * np.sin(self.Phi))
+        if polarization == "y":
+            E_theta = 1j * self.k * exp(-1j * self.k) / (2 * np.pi) * c_t * (self.f * np.sin(self.Phi))
+            E_phi = 1j * self.k * exp(-1j * self.k) / (2 * np.pi) * c_p * (self.f * np.cos(self.Phi))
+        else:
+            print("Error, polarization shall be either x or y")
+
+        return E_theta, E_phi
+
+    def get_radiated_power(self):
+        """
+        returns the radiated power (depends on the electric field distribution)
+        :return: radiatedPower
+        """
+        # equation 18.6.8 in [Orfanidis - Electromagnetic Waves and Antennas - ch 18]
+        ds = self.L / len(self.l_mesh) * self.W / len(self.w_mesh)
+        powa = np.sum(np.abs(self.tanEField) ** 2) / (2 * self.eta) * ds
+        return powa.astype('float')
+
+    def mesh_gain_pattern_theor(self, theta_mesh: np.ndarray, phi_mesh: np.ndarray, polarization="y"):
         """
         calculate the gain for a hiuygenes source
         :param theta: elevation points
@@ -306,13 +351,13 @@ class UniformAperture(Aperture):
         """
         self.Theta, self.Phi, self.f = self.theor_rect_field_transform(theta_mesh, phi_mesh)
         # obliquity factors for phased apertures need to be changed
-        c_t = 1/2 * (np.ones_like(self.Theta) + cos(self.Theta))
-        c_p = 1/2 * (np.ones_like(self.Theta) + cos(self.Theta))
+        c_t = 1 / 2 * (np.ones_like(self.Theta) + cos(self.Theta))
+        c_p = 1 / 2 * (np.ones_like(self.Theta) + cos(self.Theta))
         # c_phi and c_theta are different for modified hiuygenes sources
         if polarization == "x":
-            u = (self.k**2 / (8 * np.pi**2 * self.eta)) * (c_t**2 * self.f**2)
+            u = (self.k ** 2 / (8 * np.pi ** 2 * self.eta)) * (c_t ** 2 * self.f ** 2)
         if polarization == "y":
-            u = (self.k**2 / (8 * np.pi**2 * self.eta)) * (c_t**2 * self.f**2)
+            u = (self.k ** 2 / (8 * np.pi ** 2 * self.eta)) * (c_t ** 2 * self.f ** 2)
             # no difference in this case: simplify eq 18.6.3 to single pol non steered
         else:
             print("Error, polarization shall be either x or y")
@@ -326,9 +371,9 @@ class UniformAperture(Aperture):
         """
         :return: the peak (broadside) gain of pattern
         """
-        t = np.zeros((1,1))
-        p = np.zeros((1,1))
-        t, p, A = self.field_transform(t,p)
+        t = np.zeros((1, 1))
+        p = np.zeros((1, 1))
+        t, p, A = self.field_transform(t, p)
         A = np.abs(A.sum())
         max_g = np.pi * 4 * A / (self.c / self.freq) ** 2
         return max_g
@@ -336,14 +381,14 @@ class UniformAperture(Aperture):
 
 ### TEST ####
 if __name__ == "__main__":
-    uniap = UniformAperture(4,.8)
+    uniap = UniformAperture(4, .8)
     theta = np.linspace(0, np.pi / 2, 100)
     phi = np.linspace(0, np.pi / 2, 50)
     # method 1
-    #g1 = uniap.gain_pattern(theta, phi)# interpolation= "trapz")
+    # g1 = uniap.gain_pattern(theta, phi)# interpolation= "trapz")
     # method 2
     Theta, Phi = np.meshgrid(theta, phi)
-    g2 = uniap.mesh_gain_pattern(Theta, Phi) # it underestimates, but just a bit
+    g2 = uniap.mesh_gain_pattern(Theta, Phi)  # it underestimates, but just a bit
 
     # theoretical
     gt = uniap.mesh_gain_pattern_theor(Theta, Phi)
@@ -356,8 +401,9 @@ if __name__ == "__main__":
     # ax.set_xlabel("$\\theta\  cos \phi$")
     # ax.set_ylabel("$\\theta\  sin \phi$")
 
-    fig, ax  = plt.subplots(1)
-    c = ax.pcolormesh(uniap.Theta * cos(uniap.Phi), uniap.Theta * sin(uniap.Phi) ,10*np.log10(g2), cmap=plt.get_cmap('hot'))
+    fig, ax = plt.subplots(1)
+    c = ax.pcolormesh(uniap.Theta * cos(uniap.Phi), uniap.Theta * sin(uniap.Phi), 10 * np.log10(g2),
+                      cmap=plt.get_cmap('hot'))
     fig.colorbar(c)
     ax.set_xlabel("$\\theta\  cos \phi$")
     ax.set_ylabel("$\\theta\  sin \phi$")
@@ -370,12 +416,12 @@ if __name__ == "__main__":
     ax.set_ylabel("$\\theta\  sin \phi$")
     # DIFFERENCE
     fig, ax = plt.subplots(1)
-    c = ax.pcolormesh(uniap.Theta * cos(uniap.Phi), uniap.Theta * sin(uniap.Phi), ((g2-gt)/g2),
+    c = ax.pcolormesh(uniap.Theta * cos(uniap.Phi), uniap.Theta * sin(uniap.Phi), ((g2 - gt) / g2),
                       cmap=plt.get_cmap('hot'))
     fig.colorbar(c)
     ax.set_xlabel("$\\theta\  cos \phi$")
     ax.set_ylabel("$\\theta\  sin \phi$")
-  #  ax.set_xlim(0, np.pi/4)
-  #  ax.set_ylim(0, np.pi/4)
+#  ax.set_xlim(0, np.pi/4)
+#  ax.set_ylim(0, np.pi/4)
 
-  # todo cuts
+# todo cuts

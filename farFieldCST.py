@@ -64,6 +64,8 @@ def ffsLoader(filename):
             for j in range(phiSamples * thetaSamples):
                 dataline = content[i + j + 1]
                 dataline = dataline.split(" ")
+                if len(dataline) == 0:  # eof
+                    break
                 while "" in dataline:
                     dataline.remove("")
                 dataline = np.array(dataline[0:6], dtype=float).reshape((1, 6))
@@ -108,7 +110,7 @@ class Aperture:
         self.phiSamples = phiSamples
         self.thetaSamples = thetaSamples
         # 3 compile the interpolator function
-        theta = np.linspace(0, np.pi, 5)
+        theta = np.linspace(0, np.pi/2, 5)
         phi = np.linspace(0, 2 * np.pi, 6)
         T, P = np.meshgrid(theta, phi)
         print('compiling')
@@ -123,6 +125,8 @@ class Aperture:
         :param cubic: default True: bicubic interpolation utilised, False: linear interpolation.
         :return:
         """
+        # spherical coordinates rearranged for negative theta
+        phi_mesh = np.where(theta_mesh < 0, phi_mesh + np.pi, phi_mesh)
         # need to create an outpattern for some reason
         outpattern = np.zeros_like(theta_mesh).reshape(-1).astype('float')
         # theta and phi axes (origins of the meshgrid, non-uniform sampling not allowed)
@@ -132,8 +136,16 @@ class Aperture:
         outpattern = sphere_interp(theta_mesh.reshape(-1), phi_mesh.reshape(-1),
                                    theta, phi,
                                    self.G.T, outpattern, cubic)
+        outpattern = np.where(outpattern < 0, 0, outpattern)
         # reshape to desired format
         return outpattern.reshape(np.shape(theta_mesh))
+
+    def max_gain(self):
+        """
+        :return: the peak (broadside) gain of pattern
+        """
+        max_g = np.max(self.G)
+        return max_g
 
 
 # %% testing
@@ -141,24 +153,38 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     # 1 create an aperture with the farfield file
-    antenna = Aperture('farfield.ffs')
+    antenna = Aperture('dummyReference.ffs')
     #  Pass
 
     # 2 plot the original datum
     fig, ax = plt.subplots(1)
-    ax.contourf(antenna.Theta, antenna.Phi, 10 * np.log10(antenna.G), levels=np.linspace(-50, 16, 100))
+    ax.pcolormesh(antenna.Theta, antenna.Phi, 10 * np.log10(antenna.G), vmin=-50, vmax=50)
     plt.show()
     # Pass
 
-    # 3 create a second meshgrid
-    theta = np.linspace(0, np.pi, 1920)
-    phi = np.linspace(0, 2 * np.pi, 1080)
+    # %% 3 create a second meshgrid
+    theta = np.linspace(0, np.pi / 2, 3501)
+    phi = np.linspace(0, 2 * np.pi, 3500)
     T, P = np.meshgrid(theta, phi)
     ginterp = antenna.mesh_gain_pattern(T, P, cubic=True)
+    ginterp = np.where(ginterp < 0, 0, ginterp)
+    plt.show()
     # Pass
 
-    # 4 plot the output
+    #%%4 plot the output
     fig, ax = plt.subplots(1)
-    ax.contourf(T, P, 10 * np.log10(ginterp), levels=np.linspace(-50, 16, 100))
+    ax.pcolormesh(T, P, 10 * np.log10(ginterp), vmin=-50, vmax=50)
     plt.show()
-    # Fail it doesn't produce the correct output
+    # Pass
+
+    # # %% 6 same mesh and plot difference (works for the file farfield.ffs)
+    # theta = np.linspace(0, np.pi, 37)
+    # phi = np.linspace(0, 2 * np.pi, 73)
+    # T, P = np.meshgrid(theta, phi)
+    # ginterp = antenna.mesh_gain_pattern(T, P, cubic=True)
+    # diff = ginterp - antenna.G
+    # fig, ax = plt.subplots(1)
+    # ax.pcolormesh(T, P, 10 * np.log10(diff))
+    # plt.show()
+    # print(np.max(np.abs(diff)))
+    # # Pass

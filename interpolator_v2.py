@@ -3,7 +3,7 @@ import numpy as np
 from numba import prange, jit
 
 
-@jit(nopython=True, parallel=True) # faster without jit
+@jit(nopython=True, parallel=True)  # faster without jit
 def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cubic: bool = True):
     """
 
@@ -32,10 +32,14 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
     phi_max = phi_ax[-1]
     phi_step = (phi_ax[-1] - phi_ax[0]) / (len(phi_ax) - 1)
 
+    # check the out samples are within the samples of the original pattern
+    if np.max(phi_out) > phi_max or np.max(theta_out) > theta_max or np.min(phi_out) < phi_min or np.min(
+            theta_out) < phi_min:
+        print("Error desired point out of boundaries")
+        return
     phi_out = np.where(phi_out < 0, np.pi * 2 + phi_out, phi_out)
     # find 0 1 2 3 indices
     # print('finding indices')
-
     theta_idx_1 = np.floor((theta_out % (2 * np.pi) - theta_min) / theta_step).astype(np.int64)
     theta_idx_0 = theta_idx_1 - 1
     theta_idx_2 = theta_idx_1 + 1
@@ -51,16 +55,48 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
     maxidx = max(theta_idx_0.max(), theta_idx_1.max(), theta_idx_2.max(), theta_idx_3.max())
     minidx = min(theta_idx_0.min(), theta_idx_1.min(), theta_idx_2.min(), theta_idx_3.min())
     if maxidx >= len(theta_ax) + 2 or minidx < 0:
-        # retain index for edge values
-        theta_idx_0 = np.where(theta_idx_0 > len(theta_ax) - 1, len(theta_ax) - 1, theta_idx_0)
-        theta_idx_1 = np.where(theta_idx_1 > len(theta_ax) - 1, len(theta_ax) - 1, theta_idx_1)
-        theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, len(theta_ax) - 1, theta_idx_2)
-        theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, len(theta_ax) - 1, theta_idx_3)
+        # circular behaviour in theta
+        # full phi axis last sample is the first (odd samples)
+        if np.round((phi_max - phi_min) % (2 * np.pi)) == 0 and len(phi_ax) % 2 == 1:
+            print('case 1')
+            # first sample
+            phi_idx_0 = np.where(theta_idx_0 < 0, (phi_idx_0 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1), phi_idx_0).astype(np.int64)
+            theta_idx_0 = np.abs(theta_idx_0).astype(np.int64)
+            # last samples
+            phi_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1,
+                                 (phi_idx_2 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1), phi_idx_2).astype(np.int64)
+            phi_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1,
+                                 (phi_idx_3 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1), phi_idx_3).astype(np.int64)
+            # fold back in theta
+            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_2, theta_idx_2).astype(np.int64)
+            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_3, theta_idx_3).astype(np.int64)
 
-        theta_idx_0 = np.where(theta_idx_0 < 0, 0, theta_idx_0)
-        theta_idx_1 = np.where(theta_idx_1 < 0, 0, theta_idx_1)
-        theta_idx_2 = np.where(theta_idx_2 < 0, 0, theta_idx_2)
-        theta_idx_3 = np.where(theta_idx_3 < 0, 0, theta_idx_3)
+        # full phi axis last sample is one step before a full circle (even samples)
+        elif np.round((2 * np.pi - (phi_max - phi_min) % (2 * np.pi)) / phi_step) == 1 and len(phi_ax) % 2 == 0:
+            print('case 2')
+            # first sample
+            phi_idx_0 = np.where(theta_idx_0 < 0, (phi_idx_0 + len(phi_ax) / 2) % len(phi_ax), phi_idx_0).astype(np.int64)
+            theta_idx_0 = np.abs(theta_idx_0).astype(np.int64)
+            # last samples
+            phi_idx_2 = np.where(theta_idx_2 > len(theta_ax), (phi_idx_2 + (len(phi_ax)) / 2) % len(phi_ax), phi_idx_2).astype(np.int64)
+            phi_idx_3 = np.where(theta_idx_3 > len(theta_ax), (phi_idx_3 + (len(phi_ax)) / 2) % len(phi_ax), phi_idx_3).astype(np.int64)
+            # fold back in theta
+            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_2, theta_idx_2).astype(np.int64)
+            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_3, theta_idx_3).astype(np.int64)
+
+        # incomplete phi axis, can't implement circular behaviour
+        else:
+            print('case 3')
+            # retain index for edge values
+            theta_idx_0 = np.where(theta_idx_0 > len(theta_ax) - 1, len(theta_ax) - 1, theta_idx_0)
+            theta_idx_1 = np.where(theta_idx_1 > len(theta_ax) - 1, len(theta_ax) - 1, theta_idx_1)
+            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, len(theta_ax) - 1, theta_idx_2)
+            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, len(theta_ax) - 1, theta_idx_3)
+
+            theta_idx_0 = np.where(theta_idx_0 < 0, 0, theta_idx_0)
+            theta_idx_1 = np.where(theta_idx_1 < 0, 0, theta_idx_1)
+            theta_idx_2 = np.where(theta_idx_2 < 0, 0, theta_idx_2)
+            theta_idx_3 = np.where(theta_idx_3 < 0, 0, theta_idx_3)
 
     maxidx = max(phi_idx_0.max(), phi_idx_1.max(), phi_idx_2.max(), phi_idx_3.max())
     minidx = min(phi_idx_0.min(), phi_idx_1.min(), phi_idx_2.max(), phi_idx_3.min())
@@ -71,7 +107,7 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
             phi_idx_0 = np.where(phi_idx_0 < 0, phi_idx_0 - 1, phi_idx_0)
             phi_idx_3 = np.where(phi_idx_3 > len(phi_ax) - 1, phi_idx_3 % len(phi_ax), phi_idx_3)
         # last sample is just before the first sample but separated by a step
-        if np.round(np.abs((phi_max - phi_min) - 2 * np.pi) / phi_step) == 1:
+        elif np.round(np.abs((phi_max - phi_min) - 2 * np.pi) / phi_step) == 1:
             phi_idx_3 = np.where(phi_idx_3 > len(phi_ax), phi_idx_3 % len(phi_ax), phi_idx_3)
 
         else:
@@ -119,8 +155,8 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
                     2.0 * temp[0] - 5.0 * temp[1] + 4.0 * temp[2] - temp[3] + x_p * (
                     3.0 * (temp[1] - temp[2]) + temp[3] - temp[0]))))
             out_pattern[ii] = point
-            if point <= 0:
-                print('aaaaaa')
+            # if point <= 0:
+            #     point = 0
 
     else:
         # parallel rect interpolation
