@@ -36,6 +36,8 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
     if np.max(phi_out) > phi_max or np.max(theta_out) > theta_max or np.min(phi_out) < phi_min or np.min(
             theta_out) < phi_min:
         print("Error desired point out of boundaries")
+        print(np.max(phi_out), np.max(theta_out), np.min(phi_out), np.min(theta_out))
+        print(phi_max, theta_max, phi_min, phi_min)
         return
     phi_out = np.where(phi_out < 0, np.pi * 2 + phi_out, phi_out)
     # find 0 1 2 3 indices
@@ -60,7 +62,8 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
         if np.round((phi_max - phi_min) % (2 * np.pi)) == 0 and len(phi_ax) % 2 == 1:
             print('case 1')
             # first sample
-            phi_idx_0 = np.where(theta_idx_0 < 0, (phi_idx_0 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1), phi_idx_0).astype(np.int64)
+            phi_idx_0 = np.where(theta_idx_0 < 0, (phi_idx_0 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1),
+                                 phi_idx_0).astype(np.int64)
             theta_idx_0 = np.abs(theta_idx_0).astype(np.int64)
             # last samples
             phi_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1,
@@ -68,21 +71,28 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
             phi_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1,
                                  (phi_idx_3 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1), phi_idx_3).astype(np.int64)
             # fold back in theta
-            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_2, theta_idx_2).astype(np.int64)
-            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_3, theta_idx_3).astype(np.int64)
+            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_2,
+                                   theta_idx_2).astype(np.int64)
+            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_3,
+                                   theta_idx_3).astype(np.int64)
 
         # full phi axis last sample is one step before a full circle (even samples)
         elif np.round((2 * np.pi - (phi_max - phi_min) % (2 * np.pi)) / phi_step) == 1 and len(phi_ax) % 2 == 0:
             print('case 2')
             # first sample
-            phi_idx_0 = np.where(theta_idx_0 < 0, (phi_idx_0 + len(phi_ax) / 2) % len(phi_ax), phi_idx_0).astype(np.int64)
+            phi_idx_0 = np.where(theta_idx_0 < 0, (phi_idx_0 + len(phi_ax) / 2) % len(phi_ax), phi_idx_0).astype(
+                np.int64)
             theta_idx_0 = np.abs(theta_idx_0).astype(np.int64)
             # last samples
-            phi_idx_2 = np.where(theta_idx_2 > len(theta_ax), (phi_idx_2 + (len(phi_ax)) / 2) % len(phi_ax), phi_idx_2).astype(np.int64)
-            phi_idx_3 = np.where(theta_idx_3 > len(theta_ax), (phi_idx_3 + (len(phi_ax)) / 2) % len(phi_ax), phi_idx_3).astype(np.int64)
+            phi_idx_2 = np.where(theta_idx_2 > len(theta_ax), (phi_idx_2 + (len(phi_ax)) / 2) % len(phi_ax),
+                                 phi_idx_2).astype(np.int64)
+            phi_idx_3 = np.where(theta_idx_3 > len(theta_ax), (phi_idx_3 + (len(phi_ax)) / 2) % len(phi_ax),
+                                 phi_idx_3).astype(np.int64)
             # fold back in theta
-            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_2, theta_idx_2).astype(np.int64)
-            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_3, theta_idx_3).astype(np.int64)
+            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_2,
+                                   theta_idx_2).astype(np.int64)
+            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_3,
+                                   theta_idx_3).astype(np.int64)
 
         # incomplete phi axis, can't implement circular behaviour
         else:

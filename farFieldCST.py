@@ -110,7 +110,7 @@ class Aperture:
         self.phiSamples = phiSamples
         self.thetaSamples = thetaSamples
         # 3 compile the interpolator function
-        theta = np.linspace(0, np.pi/2, 5)
+        theta = np.linspace(0, np.pi / 2, 5)
         phi = np.linspace(0, 2 * np.pi, 6)
         T, P = np.meshgrid(theta, phi)
         print('compiling')
@@ -126,7 +126,8 @@ class Aperture:
         :return:
         """
         # spherical coordinates rearranged for negative theta
-        phi_mesh = np.where(theta_mesh < 0, phi_mesh + np.pi, phi_mesh)
+        phi_mesh = np.where(theta_mesh < 0, (phi_mesh + np.pi) % (np.pi * 2), phi_mesh)
+        theta_mesh = np.abs(theta_mesh)
         # need to create an outpattern for some reason
         outpattern = np.zeros_like(theta_mesh).reshape(-1).astype('float')
         # theta and phi axes (origins of the meshgrid, non-uniform sampling not allowed)
@@ -171,20 +172,21 @@ if __name__ == '__main__':
     plt.show()
     # Pass
 
-    #%%4 plot the output
+    # %%4 plot the output
     fig, ax = plt.subplots(1)
     ax.pcolormesh(T, P, 10 * np.log10(ginterp), vmin=-50, vmax=50)
     plt.show()
     # Pass
 
-    # # %% 6 same mesh and plot difference (works for the file farfield.ffs)
-    # theta = np.linspace(0, np.pi, 37)
-    # phi = np.linspace(0, 2 * np.pi, 73)
-    # T, P = np.meshgrid(theta, phi)
-    # ginterp = antenna.mesh_gain_pattern(T, P, cubic=True)
-    # diff = ginterp - antenna.G
-    # fig, ax = plt.subplots(1)
-    # ax.pcolormesh(T, P, 10 * np.log10(diff))
-    # plt.show()
-    # print(np.max(np.abs(diff)))
+    # %% 6 same mesh and plot difference
+    theta = np.linspace(0, np.pi / 2, antenna.thetaSamples)
+    phi = np.linspace(0, 2 * np.pi, antenna.phiSamples)
+    T, P = np.meshgrid(theta, phi)
+    ginterp = antenna.mesh_gain_pattern(T, P, cubic=True)
+    diff = ginterp - antenna.G
+    fig, ax = plt.subplots(1)
+    ax.pcolormesh(T, P, 10 * np.log10(diff))
+    plt.show()
+    print(np.max(np.abs(diff)))
+    print(np.sum(np.abs(diff)))
     # # Pass

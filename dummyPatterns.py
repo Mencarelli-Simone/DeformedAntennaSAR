@@ -22,7 +22,7 @@ W = 0.3  # m
 # the frequency is 10 GHz by default                          z
 # bending max displacement in the z direction   ____..--''     ^
 #                                               __________     .  > y
-bend = 5e-2  # m ( 5 cm max)
+bend = 2e-2  # m ( 2 cm max)
 
 # %% Flat antenna setup
 antenna = UniformAperture(L, W)
@@ -31,8 +31,8 @@ antenna.set_uniform_mesh_resolution(1 / 3 * antenna.c / 10e9, 1 / 3 * antenna.c 
 # set the field to uniform illumination (phase and amplitude)
 antenna.tanEField = np.ones_like(antenna.tanEField)
 # create a theta phi meshgrid ( just the positive emisphere is fine)
-theta = np.linspace(0, np.pi / 2, 481)
-phi = np.linspace(0, 2 * np.pi, 803)
+theta = np.linspace(0, np.pi / 2, 541)
+phi = np.linspace(0, 2 * np.pi, 901)
 T, P = np.meshgrid(theta, phi)
 # %% compute the gain ( is going to be slow)
 print('computing pattern')
@@ -56,6 +56,41 @@ ffsWrite(T.reshape(-1) * 180 / np.pi, P.reshape(-1) * 180 / np.pi,
          accepted_power=antenna.get_radiated_power(),
          stimulated_power=antenna.get_radiated_power(),
          frequency=1e10)
+
+
+
+
+fig, ax = plt.subplots(1)
+
+# H cut
+th = np.linspace(-np.pi / 30, np.pi / 30, 501)
+ph = np.array(1) * np.pi/2
+t, p = np.meshgrid(th, ph)
+E_theta, E_phi = antenna.mesh_E_field(t, p, polarization='y')  # H pol for the radar
+# equation 18.6.10 Orfanidis - Electromagnetic Waves and Antennas
+gain = 2 * np.pi * (np.abs(E_theta) ** 2 + np.abs(E_phi) ** 2) / (antenna.eta * antenna.get_radiated_power())
+
+ax.plot(t.reshape(-1)*180/np.pi, gain.reshape(-1))
+ax.set_xlabel('$\Theta$ [deg]')
+ax.set_ylabel('Gain')
+ax.set_ylim(0, 8500)
+# E cut
+#th = np.linspace(-np.pi / 2, np.pi / 2, 501)
+ph = np.array(1) * 0
+t, p = np.meshgrid(th, ph)
+E_theta, E_phi = antenna.mesh_E_field(t, p, polarization='y')  # H pol for the radar
+# equation 18.6.10 Orfanidis - Electromagnetic Waves and Antennas
+gain = 2 * np.pi * (np.abs(E_theta) ** 2 + np.abs(E_phi) ** 2) / (antenna.eta * antenna.get_radiated_power())
+ax.plot(t.reshape(-1)*180/np.pi, gain.reshape(-1))
+plt.show()
+
+
+
+
+#
+#
+#
+
 
 # %% Now lets make a distorted antenna, assuming a circular curvature
 from scipy.optimize import fsolve
@@ -119,7 +154,8 @@ gain = 2 * np.pi * (np.abs(E_theta) ** 2 + np.abs(E_phi) ** 2) / (antenna.eta * 
 
 ax.plot(t.reshape(-1)*180/np.pi, gain.reshape(-1))
 ax.set_xlabel('$\Theta$ [deg]')
-ax.set_ylabel('Gain [dB]')
+ax.set_ylabel('Gain')
+ax.set_ylim(0, 8500)
 # E cut
 #th = np.linspace(-np.pi / 2, np.pi / 2, 501)
 ph = np.array(1) * 0
