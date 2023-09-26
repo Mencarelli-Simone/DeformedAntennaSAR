@@ -19,13 +19,13 @@ ant_ref = Aperture(reference_pattern)
 ant_dist = Aperture(distorted_pattern)
 
 # %% plot gain in main cuts
-theta = np.linspace(-10 * np.pi / 180, 10 * np.pi / 180, 801)
+theta = np.linspace(-10 * np.pi / 180, 10* np.pi / 180, 2501)
 phi_E = np.array(0)
 phi_H = np.array(np.pi / 2)
 # E cut
 T, P = np.meshgrid(theta, phi_E)
 gain_r = ant_ref.mesh_gain_pattern(T, P)
-gain_d = ant_dist.mesh_gain_pattern(T, P, cubic=False) # need more samples in the pattern
+gain_d = ant_dist.mesh_gain_pattern(T, P, cubic=True) # need more samples in the pattern
 fig, ax = plt.subplots(1)
 ax.plot(theta * 180 / np.pi, (gain_r.reshape(-1)), 'r', label='E-cut Nom.')
 ax.plot(theta * 180 / np.pi, (gain_d.reshape(-1)), '--r', label='E-cut Dist.')

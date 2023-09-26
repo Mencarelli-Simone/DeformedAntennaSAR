@@ -125,6 +125,7 @@ class Aperture:
         :param cubic: default True: bicubic interpolation utilised, False: linear interpolation.
         :return:
         """
+        phi_mesh = phi_mesh % (2 * np.pi)
         # spherical coordinates rearranged for negative theta
         phi_mesh = np.where(theta_mesh < 0, (phi_mesh + np.pi) % (np.pi * 2), phi_mesh)
         theta_mesh = np.abs(theta_mesh)

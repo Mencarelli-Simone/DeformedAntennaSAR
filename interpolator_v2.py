@@ -1,3 +1,8 @@
+# Simone Mencarelli
+# updated on September 2023
+### !!!! Don't touch anything it works !!!!
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 from numba import prange, jit
@@ -20,6 +25,8 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
     # explicit casting
     # pattern = pattern.astype('float')
     # print('compiled')
+
+    flag = 0
 
     # find the min max step of axes
     theta_min = theta_ax[0]
@@ -60,38 +67,41 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
         # circular behaviour in theta
         # full phi axis last sample is the first (odd samples)
         if np.round((phi_max - phi_min) % (2 * np.pi)) == 0 and len(phi_ax) % 2 == 1:
-            print('case 1')
-            # first sample
-            phi_idx_0 = np.where(theta_idx_0 < 0, (phi_idx_0 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1),
-                                 phi_idx_0).astype(np.int64)
-            theta_idx_0 = np.abs(theta_idx_0).astype(np.int64)
-            # last samples
-            phi_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1,
-                                 (phi_idx_2 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1), phi_idx_2).astype(np.int64)
-            phi_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1,
-                                 (phi_idx_3 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1), phi_idx_3).astype(np.int64)
-            # fold back in theta
-            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_2,
+            print('case 1')  # this is wrong, changing phi is not sufficient, we need to act on the interpolator
+            # set a flag to tell the interpolator what to do
+            flag = 1
+            # # first sample
+            # phi_idx_0 = np.where(theta_idx_0 < 0, (phi_idx_0 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1),
+            #                      phi_idx_0).astype(np.int64)
+            # theta_idx_0 = np.abs(theta_idx_0).astype(np.int64)
+            # # last samples
+            # phi_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1,
+            #                      (phi_idx_2 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1), phi_idx_2).astype(np.int64)
+            # phi_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1,
+            #                      (phi_idx_3 + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1), phi_idx_3).astype(np.int64)
+            # fold back in theta and make negative for flipping of phi afterwards
+            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, -(2 * len(theta_ax) - 2 - theta_idx_2),
                                    theta_idx_2).astype(np.int64)
-            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_3,
+            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, -(2 * len(theta_ax) - 2 - theta_idx_3),
                                    theta_idx_3).astype(np.int64)
 
         # full phi axis last sample is one step before a full circle (even samples)
         elif np.round((2 * np.pi - (phi_max - phi_min) % (2 * np.pi)) / phi_step) == 1 and len(phi_ax) % 2 == 0:
             print('case 2')
-            # first sample
-            phi_idx_0 = np.where(theta_idx_0 < 0, (phi_idx_0 + len(phi_ax) / 2) % len(phi_ax), phi_idx_0).astype(
-                np.int64)
-            theta_idx_0 = np.abs(theta_idx_0).astype(np.int64)
-            # last samples
-            phi_idx_2 = np.where(theta_idx_2 > len(theta_ax), (phi_idx_2 + (len(phi_ax)) / 2) % len(phi_ax),
-                                 phi_idx_2).astype(np.int64)
-            phi_idx_3 = np.where(theta_idx_3 > len(theta_ax), (phi_idx_3 + (len(phi_ax)) / 2) % len(phi_ax),
-                                 phi_idx_3).astype(np.int64)
-            # fold back in theta
-            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_2,
+            flag = 2
+            ## first sample
+            # phi_idx_0 = np.where(theta_idx_0 < 0, (phi_idx_0 + len(phi_ax) / 2) % len(phi_ax), phi_idx_0).astype(
+            #     np.int64)
+            # theta_idx_0 = np.abs(theta_idx_0).astype(np.int64)
+            # # last samples
+            # phi_idx_2 = np.where(theta_idx_2 > len(theta_ax), (phi_idx_2 + (len(phi_ax)) / 2) % len(phi_ax),
+            #                      phi_idx_2).astype(np.int64)
+            # phi_idx_3 = np.where(theta_idx_3 > len(theta_ax), (phi_idx_3 + (len(phi_ax)) / 2) % len(phi_ax),
+            #                      phi_idx_3).astype(np.int64)
+            # fold back in theta and make negative for phi flipping afterwards
+            theta_idx_2 = np.where(theta_idx_2 > len(theta_ax) - 1, - (2 * len(theta_ax) - 2 - theta_idx_2),
                                    theta_idx_2).astype(np.int64)
-            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, 2 * len(theta_ax) - 2 - theta_idx_3,
+            theta_idx_3 = np.where(theta_idx_3 > len(theta_ax) - 1, - (2 * len(theta_ax) - 2 - theta_idx_3),
                                    theta_idx_3).astype(np.int64)
 
         # incomplete phi axis, can't implement circular behaviour
@@ -110,17 +120,25 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
 
     maxidx = max(phi_idx_0.max(), phi_idx_1.max(), phi_idx_2.max(), phi_idx_3.max())
     minidx = min(phi_idx_0.min(), phi_idx_1.min(), phi_idx_2.max(), phi_idx_3.min())
-    if maxidx >= len(phi_ax) + 2 or minidx < 0:
+    # circular behavior in phi
+    if maxidx >= len(phi_ax) or minidx < 0:
         # print(" Sphere interpolation error, phi index outside boundaries")
         # print(maxidx, minidx, phi_min, phi_max, len(phi_ax), phi_step)
         if np.round(np.abs((phi_max - phi_min) - 2 * np.pi)) == 0:  # last sample is the first sample
-            phi_idx_0 = np.where(phi_idx_0 < 0, phi_idx_0 - 1, phi_idx_0)
-            phi_idx_3 = np.where(phi_idx_3 > len(phi_ax) - 1, phi_idx_3 % len(phi_ax), phi_idx_3)
+            print('case-1')
+            phi_idx_0 = np.where(phi_idx_0 < 0, (len(phi_ax) + phi_idx_0 - 1) % len(phi_ax - 1),
+                                 phi_idx_0)  # can't use negative indexes because of the special case
+            phi_idx_2 = np.where(phi_idx_3 > len(phi_ax) - 1, phi_idx_2 % len(phi_ax - 1), phi_idx_2)
+            phi_idx_3 = np.where(phi_idx_3 > len(phi_ax) - 1, phi_idx_3 % len(phi_ax - 1), phi_idx_3)
         # last sample is just before the first sample but separated by a step
         elif np.round(np.abs((phi_max - phi_min) - 2 * np.pi) / phi_step) == 1:
-            phi_idx_3 = np.where(phi_idx_3 > len(phi_ax), phi_idx_3 % len(phi_ax), phi_idx_3)
-
+            print('case-2')
+            phi_idx_0 = np.where(phi_idx_0 < 0, (len(phi_ax) + phi_idx_0) % len(phi_ax),
+                                 phi_idx_0)  # can't use negative indexes because of the special case
+            phi_idx_2 = np.where(phi_idx_3 > len(phi_ax) - 1, phi_idx_2 % len(phi_ax), phi_idx_2)
+            phi_idx_3 = np.where(phi_idx_3 > len(phi_ax) - 1, phi_idx_3 % len(phi_ax), phi_idx_3)
         else:
+            print('case-3')
             # retain index for edge values
             phi_idx_0 = np.where(phi_idx_0 > len(phi_ax) - 1, len(phi_ax) - 1, phi_idx_0)
             phi_idx_1 = np.where(phi_idx_1 > len(phi_ax) - 1, len(phi_ax) - 1, phi_idx_1)
@@ -135,38 +153,115 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
     # print('interpolating')
 
     if cubic:
-        # parallel interpolation
-        for ii in prange(len(out_pattern)):
-            p = np.zeros((4)).astype('float')
-            temp = np.zeros((4)).astype('float')
-            # 1 -  we interpolate along phi to find four theta points
-            # output theta displacement within cell
-            x_t = (theta_out[ii] - theta_idx_1[ii] * theta_step) / theta_step
-            phi_idxs = np.zeros(4).astype(np.int64)
-            phi_idxs[0] = phi_idx_0[ii]
-            phi_idxs[1] = phi_idx_1[ii]
-            phi_idxs[2] = phi_idx_2[ii]
-            phi_idxs[3] = phi_idx_3[ii]
-            # interpolating the 4 points along the output theta coordinate
-            for jj in range(4):
-                # four points of the interpolation
-                p[0] = pattern[theta_idx_0[ii], phi_idxs[jj]]
-                p[1] = pattern[theta_idx_1[ii], phi_idxs[jj]]
-                p[2] = pattern[theta_idx_2[ii], phi_idxs[jj]]
-                p[3] = pattern[theta_idx_3[ii], phi_idxs[jj]]
-                # inner interpolation
-                temp[jj] = p[1] + 0.5 * x_t * (p[2] - p[0] + x_t * (
-                        2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] + x_t * (
-                        3.0 * (p[1] - p[2]) + p[3] - p[0])))
-            # 2 -  finding the final point interpolating temp along phi
-            # output phi displacement within cell
-            x_p = (phi_out[ii] - phi_idx_1[ii] * phi_step) % (2 * np.pi) / phi_step
-            point = np.real(temp[1] + 0.5 * x_p * (temp[2] - temp[0] + x_p * (
-                    2.0 * temp[0] - 5.0 * temp[1] + 4.0 * temp[2] - temp[3] + x_p * (
-                    3.0 * (temp[1] - temp[2]) + temp[3] - temp[0]))))
-            out_pattern[ii] = point
-            # if point <= 0:
-            #     point = 0
+        if flag == 0:
+            # parallel interpolation
+            for ii in prange(len(out_pattern)):
+                p = np.zeros((4)).astype('float')
+                temp = np.zeros((4)).astype('float')
+                # 1 -  we interpolate along phi to find four theta points
+                # output theta displacement within cell
+                x_t = (theta_out[ii] - theta_idx_1[ii] * theta_step) / theta_step
+                phi_idxs = np.zeros(4).astype(np.int64)
+                phi_idxs[0] = phi_idx_0[ii]
+                phi_idxs[1] = phi_idx_1[ii]
+                phi_idxs[2] = phi_idx_2[ii]
+                phi_idxs[3] = phi_idx_3[ii]
+                # interpolating the 4 points along the output theta coordinate
+                for jj in range(4):
+                    # four points of the interpolation
+                    p[0] = pattern[theta_idx_0[ii], phi_idxs[jj]]
+                    p[1] = pattern[theta_idx_1[ii], phi_idxs[jj]]
+                    p[2] = pattern[theta_idx_2[ii], phi_idxs[jj]]
+                    p[3] = pattern[theta_idx_3[ii], phi_idxs[jj]]
+                    # inner interpolation
+                    temp[jj] = p[1] + 0.5 * x_t * (p[2] - p[0] + x_t * (
+                            2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] + x_t * (
+                            3.0 * (p[1] - p[2]) + p[3] - p[0])))
+                # 2 -  finding the final point interpolating temp along phi
+                # output phi displacement within cell
+                x_p = (phi_out[ii] - phi_idx_1[ii] * phi_step) % (2 * np.pi) / phi_step
+                point = np.real(temp[1] + 0.5 * x_p * (temp[2] - temp[0] + x_p * (
+                        2.0 * temp[0] - 5.0 * temp[1] + 4.0 * temp[2] - temp[3] + x_p * (
+                        3.0 * (temp[1] - temp[2]) + temp[3] - temp[0]))))
+                out_pattern[ii] = point
+                # if point <= 0:
+                #     point = 0
+        else:  # special version to handle negative theta_idx_0
+            # parallel interpolation
+            print('interpol', flag)
+            for ii in prange(len(out_pattern)):
+                p = np.zeros((4)).astype('float')
+                temp = np.zeros((4)).astype('float')
+                # 1 -  we interpolate along phi to find four theta points
+                theta_idxs = np.zeros(4).astype(np.int64)
+                theta_idxs[0] = theta_idx_0[ii]
+                theta_idxs[1] = theta_idx_1[ii]
+                theta_idxs[2] = theta_idx_2[ii]
+                theta_idxs[3] = theta_idx_3[ii]
+
+                # interpolating the 4 points along the output theta coordinate
+                theta_sign = 0
+                for jj in range(0, 4):
+                    # save phi out value
+                    phio = phi_out[ii]
+                    # output phi displacement within cell
+                    x_p = (phio - phi_idx_1[ii] * phi_step) % (2 * np.pi) / phi_step
+                    # four points of the interpolation
+                    p[0] = pattern[theta_idxs[jj], phi_idx_0[ii]]
+                    p[1] = pattern[theta_idxs[jj], phi_idx_1[ii]]
+                    p[2] = pattern[theta_idxs[jj], phi_idx_2[ii]]
+                    p[3] = pattern[theta_idxs[jj], phi_idx_3[ii]]
+                    if flag == 1:
+                        # rotate phi idx if theta negative recall phi is odd last sample equal to first
+                        if theta_idxs[jj] < 0:
+                            # non permanent changes
+                            phi_idxs_0 = int((phi_idx_0[ii] + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1))
+                            phi_idxs_1 = int((phi_idx_1[ii] + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1))
+                            phi_idxs_2 = int((phi_idx_2[ii] + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1))
+                            phi_idxs_3 = int((phi_idx_3[ii] + (len(phi_ax) - 1) / 2) % (len(phi_ax) - 1))
+                            # and make theta positive
+                            theta_idxs[jj] = - theta_idxs[jj]
+                            # and rotate out phi
+                            phioi = (phio + np.pi) % (2 * np.pi)
+                            theta_sign = 1
+                            # displacement within cell
+                            x_p = (phioi - phi_idxs_1 * phi_step) % (2 * np.pi) / phi_step
+                            # four points of the interpolation
+                            p[0] = pattern[theta_idxs[jj], phi_idxs_0]
+                            p[1] = pattern[theta_idxs[jj], phi_idxs_1]
+                            p[2] = pattern[theta_idxs[jj], phi_idxs_2]
+                            p[3] = pattern[theta_idxs[jj], phi_idxs_3]
+                    elif flag == 2:
+                        # rotate phi idx if theta negative recall phi is even last sample before first
+                        if theta_idxs[jj] < 0:
+                            phi_idxs_0 = int((phi_idx_0[ii] + (len(phi_ax)) / 2) % (len(phi_ax)))
+                            phi_idxs_1 = int((phi_idx_1[ii] + (len(phi_ax)) / 2) % (len(phi_ax)))
+                            phi_idxs_2 = int((phi_idx_2[ii] + (len(phi_ax)) / 2) % (len(phi_ax)))
+                            phi_idxs_3 = int((phi_idx_3[ii] + (len(phi_ax)) / 2) % (len(phi_ax)))
+                            # and make theta positive
+                            theta_idxs[jj] = - theta_idxs[jj]
+                            # and rotate out phi
+                            phioi = (phio + np.pi) % (2 * np.pi)
+                            theta_sign = 1
+                            # displacement within cell
+                            x_p = (phioi - phi_idxs_1 * phi_step) % (2 * np.pi) / phi_step
+                            # four points of the interpolation
+                            p[0] = pattern[theta_idxs[jj], phi_idxs_0]
+                            p[1] = pattern[theta_idxs[jj], phi_idxs_1]
+                            p[2] = pattern[theta_idxs[jj], phi_idxs_2]
+                            p[3] = pattern[theta_idxs[jj], phi_idxs_3]
+
+                    # inner interpolation
+                    temp[jj] = p[1] + 0.5 * x_p * (p[2] - p[0] + x_p * (
+                            2.0 * p[0] - 5.0 * p[1] + 4.0 * p[2] - p[3] + x_p * (
+                            3.0 * (p[1] - p[2]) + p[3] - p[0])))
+                # 2 -  finding the final point interpolating temp along theta
+                # output phi displacement within cell
+                x_t = (theta_out[ii] - theta_idx_1[ii] * theta_step) / theta_step
+                point = np.real(temp[1] + 0.5 * x_t * (temp[2] - temp[0] + x_t * (
+                        2.0 * temp[0] - 5.0 * temp[1] + 4.0 * temp[2] - temp[3] + x_t * (
+                        3.0 * (temp[1] - temp[2]) + temp[3] - temp[0]))))
+                out_pattern[ii] = point
 
     else:
         # parallel rect interpolation
