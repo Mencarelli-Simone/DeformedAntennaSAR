@@ -3,6 +3,7 @@
 /AIR.png
 /dummyDistorted.ffs
 /dummyReference.ffs
+/radartools/__pycache__/*
 /radartools/__pycache__
 /.idea/inspectionProfiles/profiles_settings.xml
 /.idea/DeformedAntennaSAR.iml
@@ -11,3 +12,4 @@
 /.idea/other.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
+
