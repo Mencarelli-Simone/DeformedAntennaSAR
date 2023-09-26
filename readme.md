@@ -33,10 +33,25 @@ two patterns loaded from ffs files.
 
 - **deformedAntennaAIR:** (Azimuth impulse response)
 
-- TBD SNR stuff
+- **deformedAntennaSNR:** compute the core SNR i.e. the SNR for 
+distributed scatterers normalized with respect to RCS, transmitted
+power, noise figure, losses and chirp (noise) bandwidth. For the
+nominal case and the distorted antenna case (with the signal and noise
+still processed using the nominal antenna pattern)
 
+# dependencies
+- numpy 
+- matplotlib
+- scipy
+- numba
 
-## dependencies
+# Getting started
+rename the dummyDistorted0.fss and dummyReference0.ffs removing the "0" 
+at the end and run **deformedAntennaAIR:** and **deformedAntennaSNR:**.\
+Alternative ffs patterns can be visualized with **patterns_visualization** 
+and input in the **user input** section of the above scripts.
+
+# notes
 the *radartools* folder is copied from the design-baseline project.
 it contains some functions and objects useful to modelling the 
 geometry and set the radar parameters.
