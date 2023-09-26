@@ -282,6 +282,7 @@ def mesh_doppler_to_azimuth(theta_mesh, doppler_mesh, lambda_c, v_s, h=500e3, re
     # collected equations
     A = (re + h) ** 2 + re ** 2
     B = 2 * (re + h) * re * cos_theta_e
+    B[np.isnan(B)] = 0
     v = v_s / (re + h)
     # the absolute stationary phase time ( time - doppler relation ) is
     arg = ((lambda_c ** 2 * doppler_mesh ** 2 + np.sqrt(
@@ -289,6 +290,7 @@ def mesh_doppler_to_azimuth(theta_mesh, doppler_mesh, lambda_c, v_s, h=500e3, re
                    2 * B * v ** 2))
     # making sure it doesn't exceed 1
     # print(arg)
+    arg[np.isnan(arg)] = 0
     arg = np.where(np.abs(arg) > 1, np.sign(arg), arg)
     # print(arg)
     t_k = np.abs(1 / v * np.arccos(arg))
@@ -338,7 +340,6 @@ def mesh_incidence_azimuth_to_gcs(incidence_mesh, azimuth_mesh, lambda_c, v_s, h
     :param lambda_c: wavelength
     :param v_s: satellite orbital speed (circular orbit)
     :param h: optional, satellite height from ground, default 500 km
-    :param re: optional, spherical earth radius, default 6371 km
     :param c: optional, default speed of light
     :return: x_mesh, y_mesh, z_mesh
     """
@@ -347,7 +348,7 @@ def mesh_incidence_azimuth_to_gcs(incidence_mesh, azimuth_mesh, lambda_c, v_s, h
     # cosine of earth-centric elevation angle of azimuth circle parallel to the orbital plane on the sphere
     cos_theta_e = (re + R0_mesh * cos(incidence_mesh)) / (re + h)
     # elevation coordinate of point
-    theta_e = np.arccos(cos_theta_e) * np.sign(incidence_mesh) # to consider also incidence angles behind nadir
+    theta_e = np.arccos(cos_theta_e) * np.sign(incidence_mesh)  # to consider also incidence angles behind nadir
     # azimuth angle coordinate
     theta_a = azimuth_mesh / (re * cos_theta_e)
     # x coordinate mesh
@@ -359,7 +360,28 @@ def mesh_incidence_azimuth_to_gcs(incidence_mesh, azimuth_mesh, lambda_c, v_s, h
     return x, y, z
 
 
-#  move this to design_function.
+def mesh_incidence_time_to_incidence_azimuth(incidence_mesh, time_mesh, v_s, h=500e3, re=6371e3):
+    """
+    converts the slow time to azimuth ground displacement given the incidence angle
+    :param incidence_mesh: incidence angle [rad]
+    :param time_mesh: slow time
+    :param v_s: satellite orbital speed
+    :param h: optional, satellite height from ground, default 500 km
+    :param re: optional, spherical earth radius, default 6371 km
+    :return: incidence, azimuth
+    """
+    # closest approach slant range
+    R0_mesh = re * (np.sqrt(cos(incidence_mesh) ** 2 + 2 * h / re + h ** 2 / re ** 2) - cos(incidence_mesh))
+    # cosine of earth-centric elevation angle of azimuth circle parallel to the orbital plane on the sphere
+    cos_theta_e = (re + R0_mesh * cos(incidence_mesh)) / (re + h)
+    # ground velocity
+    v_g = re * cos_theta_e * v_s / (re + h)
+    # azimuth ground distance covered
+    azimuth_mesh = v_g * time_mesh
+    return incidence_mesh, azimuth_mesh
+
+
+# move this to design_function.
 def nominal_doppler_bandwidth(antenna_length, incidence_angle, lambda_c, v_s, h=500e3, re=6371e3, c=299792458.0):
     """
     non squinted radar nominal doppler bandwidth (3-dB antenna Beamwidth) with some degree of approximation
@@ -376,10 +398,10 @@ def nominal_doppler_bandwidth(antenna_length, incidence_angle, lambda_c, v_s, h=
 
     r0 = re * (np.sqrt(cos(incidence_angle) ** 2 + 2 * h / re + h ** 2 / re ** 2) - cos(incidence_angle))
     angle_az = np.arcsin(lambda_c / antenna_length)
-    # we approximate the azimuth length illuminateb by the antenna as
+    # we approximate the azimuth length illuminated by the antenna as
     d = r0 * np.tan(angle_az)
 
-    # this is corresponds to an integration time (at the incidence angle) of
+    # this corresponds to an integration time (at the incidence angle) of
     ## using the ground point elevation angle
     cos_theta_e = (re + r0 * cos(incidence_angle)) / (re + h)
     ## and the closest approach range point speed on ground
