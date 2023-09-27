@@ -118,7 +118,7 @@ ax.set_xlabel('incidence angle [deg]')
 ax.set_ylabel('core SNR [neper]')
 plt.show()
 
-rs, rg = range_from_theta(incidence, altitude)
+rs, rg = range_from_theta(incidence * 180 / np.pi, altitude)
 
 fig, ax = plt.subplots(1)
 ax.plot(rg, 10 * np.log10(SNR_core_ref), '--', label='reference')
