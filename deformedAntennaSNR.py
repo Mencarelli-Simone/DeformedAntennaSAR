@@ -64,11 +64,11 @@ X, Y, Z = mesh_incidence_azimuth_to_gcs(I, A, c / f, v_s, altitude)
 Xl, Yl, Zl = mesh_gcs_to_lcs(X, Y, Z, radarGeo.Bc2s, radarGeo.S_0)
 ## 7 LCS spherical
 R, T, P = meshCart2sph(Xl, Yl, Zl)
-## 8 Antenna patterns
+## 8 Normalized Antenna patterns
 T[np.isnan(T)] = 0
 P[np.isnan(P)] = 0  # to be safe
-G_ref = ant_ref.mesh_gain_pattern(T, P)
-G_dist = ant_dist.mesh_gain_pattern(T, P)
+G_ref = ant_ref.mesh_gain_pattern(T, P) / ant_ref.max_gain()
+G_dist = ant_dist.mesh_gain_pattern(T, P) / ant_ref.max_gain()
 ## 9 Integrand
 # the matched filter amplitude
 H = 1 / (stationary_phase_amplitude_multiplier(I, Tk, c / f, v_s, altitude) * G_ref)
@@ -121,17 +121,17 @@ plt.show()
 rs, rg = range_from_theta(incidence * 180 / np.pi, altitude)
 
 fig, ax = plt.subplots(1)
-ax.plot(rg, 10 * np.log10(SNR_core_ref), '--', label='reference')
-ax.plot(rg, 10 * np.log10(SNR_core), '--', label='distorted antenna')
+ax.plot(rg / 1000, 10 * np.log10(SNR_core_ref), '--', label='reference')
+ax.plot(rg / 1000, 10 * np.log10(SNR_core), '--', label='distorted antenna')
 ax.legend()
-ax.set_xlabel('ground range [m]')
+ax.set_xlabel('ground range [km]')
 ax.set_ylabel('core SNR [dB]')
 plt.show()
 
 fig, ax = plt.subplots(1)
-ax.plot(rg, (SNR_core_ref), '--', label='reference')
-ax.plot(rg, (SNR_core), '--', label='distorted antenna')
+ax.plot(rg / 1000, (SNR_core_ref), '--', label='reference')
+ax.plot(rg / 1000, (SNR_core), '--', label='distorted antenna')
 ax.legend()
-ax.set_xlabel('ground range [m]')
+ax.set_xlabel('ground range [km]')
 ax.set_ylabel('core SNR [neper]')
 plt.show()
