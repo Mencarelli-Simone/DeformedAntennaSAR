@@ -91,6 +91,22 @@ I, Ts = np.meshgrid(incidence, t)
 # time to azimuth (it is not the same A of above)
 I, A = mesh_incidence_time_to_incidence_azimuth(I, Ts, v_s, altitude)
 
+# %% plot antenna pattern on Incidence Doppler (rcmc'ed)
+fig, ax = plt.subplots(1)
+# puncture the indexes (one sample every 8)
+jj = np.arange(0, len(I[:, 0]), 8).astype('int')
+jj = np.argwhere(np.abs(D[:, 50]) < Bd * 3)[:, 0]
+c = ax.pcolormesh(I[jj, :] * 180 / np.pi, D[jj, :] * 1e-3,
+                  20 * np.log10(np.abs(G_dist[jj, :]) / np.max(np.abs(G_dist[jj, :]))), vmin=-60)
+ax.set_ylabel('Doppler shift [kHz]')
+ax.set_xlabel('incidence angle [deg]')
+fig.colorbar(c, ax=ax, label='[dB]')
+# Bd lines
+ax.plot(np.array((incidence[0], incidence[-1])) * 180 / np.pi, np.ones(2) * Bd / 2e3, 'r')
+ax.plot(np.array((incidence[0], incidence[-1])) * 180 / np.pi, -np.ones(2) * Bd / 2e3, 'r', label='Bd')
+ax.legend()
+plt.show()
+
 # %%
 fig, ax = plt.subplots(1)
 # slice the array to relevant bit
@@ -119,15 +135,14 @@ ax.legend()
 ax.set_xlabel('ground azimuth [m]')
 ax.set_ylabel('normalized amplitude [dB]')
 ax.set_xlim(-5, 5)
-ax.set_ylim(-28,0)
+ax.set_ylim(-28, 0)
 plt.show()
-
 
 # %%
 fig, ax = plt.subplots(1)
 # slice the output for ease of plotting
 ii = np.argwhere(np.abs(A[:, 50]) < 10)[:, 0]
-c = ax.pcolormesh(I[ii, :] * 180 / np.pi, A[ii, :], 20 * np.log10(np.abs(AIR[ii, :])/np.max(np.abs(AIR[ii, :]))))
+c = ax.pcolormesh(I[ii, :] * 180 / np.pi, A[ii, :], 20 * np.log10(np.abs(AIR[ii, :]) / np.max(np.abs(AIR[ii, :]))))
 fig.colorbar(c, ax=ax, label='[dB]')
 ax.set_ylabel('ground azimuth [m]')
 ax.set_xlabel('incidence angle [deg]')
