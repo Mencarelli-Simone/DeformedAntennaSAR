@@ -27,8 +27,8 @@ def ffsWrite(theta, phi, e_theta, e_phi,
              frequency=10e9):
     """
     export a pattern to ffs format
-    :param theta: least significative , when unraveling the meshgrid this has to vary faster than theta
-    :param phi: most significative , when unraveling the meshgrid this has to vary slower than theta
+    :param theta: least significant , when unraveling the meshgrid this has to vary faster than theta
+    :param phi: most significant , when unraveling the meshgrid this has to vary slower than theta
     :param e_theta: complex 1d
     :param e_phi: complex 1d
     :param num_phi:
