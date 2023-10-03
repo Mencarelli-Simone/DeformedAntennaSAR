@@ -8,7 +8,7 @@ import numpy as np
 from numba import prange, jit
 
 
-@jit(nopython=True, parallel=True)  # faster without jit
+#@jit(nopython=True, parallel=True)  # faster without jit
 def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cubic: bool = True):
     """
 
@@ -39,13 +39,14 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
     phi_max = phi_ax[-1]
     phi_step = (phi_ax[-1] - phi_ax[0]) / (len(phi_ax) - 1)
 
-    # check the out samples are within the samples of the original pattern
-    if np.max(phi_out) > phi_max or np.max(theta_out) > theta_max or np.min(phi_out) < phi_min or np.min(
-            theta_out) < phi_min:
-        print("Error desired point out of boundaries")
-        print(np.max(phi_out), np.max(theta_out), np.min(phi_out), np.min(theta_out))
-        print(phi_max, theta_max, phi_min, phi_min)
-        return
+    # check the out samples are within the samples of the original pattern (nope, clashes with round 1 case)
+    # if np.max(phi_out) > phi_max or np.max(theta_out) > theta_max or np.min(phi_out) < phi_min or np.min(
+    #         theta_out) < phi_min:
+    #     print("Error desired point out of boundaries")
+    #     print(np.max(phi_out), np.max(theta_out), np.min(phi_out), np.min(theta_out))
+    #     print(phi_max, theta_max, phi_min, phi_min)
+    #     return
+
     phi_out = np.where(phi_out < 0, np.pi * 2 + phi_out, phi_out)
     # find 0 1 2 3 indices
     # print('finding indices')
@@ -64,7 +65,7 @@ def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cu
     maxidx = max(theta_idx_0.max(), theta_idx_1.max(), theta_idx_2.max(), theta_idx_3.max())
     minidx = min(theta_idx_0.min(), theta_idx_1.min(), theta_idx_2.min(), theta_idx_3.min())
     if maxidx >= len(theta_ax) + 2 or minidx < 0:
-        # circular behaviour in theta
+        # circular behaviour in phi
         # full phi axis last sample is the first (odd samples)
         if np.round((phi_max - phi_min) % (2 * np.pi)) == 0 and len(phi_ax) % 2 == 1:
             print('case 1')  # this is wrong, changing phi is not sufficient, we need to act on the interpolator
