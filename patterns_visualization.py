@@ -12,7 +12,7 @@ import matplotlib
 
 # %% User input
 reference_pattern = 'dummyReference.ffs'
-distorted_pattern = 'dummyDistorted.ffs'
+distorted_pattern = 'dummyDistortedMode2.ffs'
 
 # %% load patterns
 ant_ref = Aperture(reference_pattern)

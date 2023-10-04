@@ -24,7 +24,7 @@ c = 299792458.0
 swath = 100e3
 # pattern files
 reference_pattern = 'dummyReference.ffs'
-distorted_pattern = 'dummyDistorted.ffs'
+distorted_pattern = 'dummyDistortedMode2.ffs'
 
 # %% set scene geometry
 radarGeo = RadarGeometry()
