@@ -8,7 +8,7 @@ import numpy as np
 from numba import prange, jit
 
 
-#@jit(nopython=True, parallel=True)  # faster without jit
+@jit(nopython=True, parallel=True)  # faster without jit
 def sphere_interp(theta_out, phi_out, theta_ax, phi_ax, pattern, out_pattern, cubic: bool = True):
     """
 
