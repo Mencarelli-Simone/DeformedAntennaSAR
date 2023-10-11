@@ -49,6 +49,7 @@ gain_d = ant_dist.mesh_gain_pattern(T, P)
 # %%
 fig, ax = plt.subplots(1)
 ax.pcolormesh(T * np.cos(P), T * np.sin(P), 10*np.log10(gain_r))
+#ax.pcolormesh(T * np.cos(P), T * np.sin(P), (gain_r))
 ax.set_xlabel("$\\theta\  cos \phi$")
 ax.set_ylabel("$\\theta\  sin \phi$")
 plt.show()

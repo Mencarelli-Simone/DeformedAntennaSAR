@@ -165,7 +165,9 @@ def ffeLoader(filename):
     Phi = Phi.reshape((phiSamples, thetaSamples))
     Theta = dataMatrix[:, 0]
     Theta = Theta.reshape((phiSamples, thetaSamples))
-    ## todo comment this if the ffe files are fixed
+    ## todo comment when fixed rotation in phi of 90deg
+    # E_Theta = np.roll(E_Theta,int(phiSamples/4),axis=0)
+    # E_Phi = np.roll(E_Phi, int(phiSamples / 4), axis=0)
     #E_Theta = np.flip(E_Theta,0)
     E_Phi = np.flip(E_Phi, 0)
     D_tot = dataMatrix[:, 8]
