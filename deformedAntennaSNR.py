@@ -13,6 +13,7 @@ from numpy.fft import fft, ifft, fftshift, ifftshift
 # %% User input
 # broadside incidence angle
 incidence_broadside = 25 * np.pi / 180
+squint = -66.1 * np.pi / 180
 altitude = 500e3
 # frequency
 f = 10e9
@@ -24,14 +25,14 @@ c = 299792458.0
 swath = 100e3
 # reference_pattern = 'dummyReference.ffs'
 # distorted_pattern = 'dummyDistortedMode2.ffs'
-reference_pattern = 'lyceanem/NormalAntenna.ffe'
-distorted_pattern = 'lyceanem/DeformedAntenna.ffe'
+reference_pattern = 'lyceanem/NormalAntennav2.ffe'
+distorted_pattern = 'lyceanem/DeformedAntennav2.ffe'
 
 # %% set scene geometry
 radarGeo = RadarGeometry()
 # set rotation
 looking_angle = incidence_angle_to_looking_angle(incidence_broadside, altitude)
-radarGeo.set_rotation(looking_angle, 0, 0)
+radarGeo.set_rotation(looking_angle, 0, squint)
 # set position
 radarGeo.set_initial_position(0, 0, altitude)
 # set orbital speed

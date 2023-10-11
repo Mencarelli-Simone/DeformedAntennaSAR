@@ -13,11 +13,12 @@ from numpy.fft import fft, ifft, fftshift, ifftshift
 # %% User input
 # broadside incidence angle
 incidence_broadside = 25 * np.pi / 180
+squint = -66.1 * np.pi / 180
 altitude = 500e3
 # frequency
 f = 10e9
 # antenna length (or equivalent for 3db beamwidth)
-La = 2
+La = 0.3
 # speed of light
 c = 299792458.0
 # range swath
@@ -25,14 +26,14 @@ swath = 100e3
 # pattern files
 # reference_pattern = 'dummyReference.ffs'
 # distorted_pattern = 'dummyDistortedMode2.ffs'
-reference_pattern = 'lyceanem/NormalAntenna.ffe'
-distorted_pattern = 'lyceanem/DeformedAntenna.ffe'
+reference_pattern = 'lyceanem/NormalAntennav2.ffe'
+distorted_pattern = 'lyceanem/DeformedAntennav2.ffe'
 
 # %% set scene geometry
 radarGeo = RadarGeometry()
 # set rotation
 looking_angle = incidence_angle_to_looking_angle(incidence_broadside, altitude)
-radarGeo.set_rotation(looking_angle, 0, 0)
+radarGeo.set_rotation(looking_angle, 0, squint)
 # set position
 radarGeo.set_initial_position(0, 0, altitude)
 # set orbital speed
@@ -165,7 +166,6 @@ ax.set_ylabel('Doppler shift [Hz]')
 ax.set_xlabel('incidence angle [deg]')
 plt.show()
 
-
 # %% cut
 fig, ax = plt.subplots(1)
 ax.plot(A[:, 50], np.abs(AIR[:, 50]) / np.max(AIR[:, 50]), label='distorted antenna')
@@ -173,7 +173,7 @@ ax.plot(A[:, 50], np.abs(AIRR[:, 50]), '--', label='reference')
 ax.legend()
 ax.set_xlabel('ground azimuth [m]')
 ax.set_ylabel('normalized amplitude')
-ax.set_xlim(-5, 5)
+ax.set_xlim(-1, 1)
 plt.show()
 
 # %% cut but in dB
@@ -185,7 +185,7 @@ ax.plot(A[:, 50], 20 * np.log10(np.abs(AIRR[:, 50])), '--', label='reference')
 ax.legend(loc='upper right', prop={"size": 8})
 ax.set_xlabel('ground azimuth [m]')
 ax.set_ylabel('normalized amplitude [dB]')
-ax.set_xlim(-5, 5)
+ax.set_xlim(-1, 1)
 ax.set_ylim(-28, 0)
 
 fig.set_figwidth(fw)
@@ -200,7 +200,7 @@ fig.savefig("niceplotsforpaper/AIScut.svg", format="svg")
 # %%
 fig, ax = plt.subplots(1)
 # slice the output for ease of plotting
-ii = np.argwhere(np.abs(A[:, 50]) < 10)[:, 0]
+ii = np.argwhere(np.abs(A[:, 50]) < 4)[:, 0]
 c = ax.pcolormesh(I[ii, :] * 180 / np.pi, A[ii, :], 20 * np.log10(np.abs(AIR[ii, :]) / np.max(np.abs(AIR[ii, :]))),
                   rasterized=True)
 cbar = fig.colorbar(c, ax=ax, label='[dB]')
@@ -219,6 +219,6 @@ plt.rcParams['svg.fonttype'] = 'none'
 fig.savefig("niceplotsforpaper/AIS.svg", format="svg", dpi=600)
 plt.show()
 
-#%%%
-#last cell
+# %%%
+# last cell
 print('prrrrrrr')

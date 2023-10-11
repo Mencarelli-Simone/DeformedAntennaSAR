@@ -11,15 +11,15 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 
 # %% User input
-reference_pattern = 'lyceanem/NormalAntenna.ffe'
-distorted_pattern = 'lyceanem/DeformedAntenna.ffe'
+reference_pattern = 'lyceanem/NormalAntennav2.ffe'
+distorted_pattern = 'lyceanem/DeformedAntennav2.ffe'
 
 # %% load patterns
 ant_ref = Aperture(reference_pattern)
 ant_dist = Aperture(distorted_pattern)
 
 # %% plot gain in main cuts
-theta = np.linspace(-90 * np.pi / 180, 90* np.pi / 180, 2501)
+theta = np.linspace((66.1-90) * np.pi / 180, (66.1+90)* np.pi / 180, 2501)
 phi_E = np.array(0)
 phi_H = np.array(np.pi / 2)
 # E cut
@@ -27,14 +27,14 @@ T, P = np.meshgrid(theta, phi_E)
 gain_r = ant_ref.mesh_gain_pattern(T, P)
 gain_d = ant_dist.mesh_gain_pattern(T, P, cubic=True) # need more samples in the pattern
 fig, ax = plt.subplots(1)
-ax.plot(theta * 180 / np.pi, (gain_r.reshape(-1)), 'r', label='E-cut Nom.')
-ax.plot(theta * 180 / np.pi, (gain_d.reshape(-1)), '--r', label='E-cut Dist.')
+ax.plot(theta * 180 / np.pi, 10*np.log10(gain_r.reshape(-1)), 'r', label='E-cut Nom.')
+ax.plot(theta * 180 / np.pi, 10*np.log10(gain_d.reshape(-1)), '--r', label='E-cut Dist.')
 # H cut
 T, P = np.meshgrid(theta, phi_H)
 gain_r = ant_ref.mesh_gain_pattern(T, P)
 gain_d = ant_dist.mesh_gain_pattern(T, P)
-ax.plot(theta * 180 / np.pi, (gain_r.reshape(-1)), 'b', label='H-cut Nom.')
-ax.plot(theta * 180 / np.pi, (gain_d.reshape(-1)), '--b', label='H-cut Dist.')
+ax.plot(theta * 180 / np.pi, 10*np.log10(gain_r.reshape(-1)), 'b', label='H-cut Nom.')
+ax.plot(theta * 180 / np.pi, 10*np.log10(gain_d.reshape(-1)), '--b', label='H-cut Dist.')
 ax.set_xlabel('$\Theta$ [deg]')
 ax.set_ylabel('Gain ')
 ax.legend()
@@ -48,13 +48,15 @@ gain_r = ant_ref.mesh_gain_pattern(T, P)
 gain_d = ant_dist.mesh_gain_pattern(T, P)
 # %%
 fig, ax = plt.subplots(1)
-ax.pcolormesh(T * np.cos(P), T * np.sin(P), 10*np.log10(gain_r))
+ax.pcolormesh(T * np.cos(P), T * np.sin(P), 10*np.log10(gain_r),vmin=0, vmax=18)
 #ax.pcolormesh(T * np.cos(P), T * np.sin(P), (gain_r))
 ax.set_xlabel("$\\theta\  cos \phi$")
 ax.set_ylabel("$\\theta\  sin \phi$")
 plt.show()
 fig, ax = plt.subplots(1)
-ax.pcolormesh(T * np.cos(P), T * np.sin(P), 10*np.log10(gain_d))
+ax.pcolormesh(T * np.cos(P), T * np.sin(P), 10*np.log10(gain_d),vmin=0, vmax=18)
 ax.set_xlabel("$\\theta\  cos \phi$")
 ax.set_ylabel("$\\theta\  sin \phi$")
 plt.show()
+
+i = np.unravel_index(np.argmax(gain_r, axis=None), gain_r.shape)
