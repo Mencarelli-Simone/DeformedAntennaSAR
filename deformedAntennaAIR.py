@@ -23,8 +23,10 @@ c = 299792458.0
 # range swath
 swath = 100e3
 # pattern files
-reference_pattern = 'dummyReference.ffs'
-distorted_pattern = 'dummyDistortedMode2.ffs'
+# reference_pattern = 'dummyReference.ffs'
+# distorted_pattern = 'dummyDistortedMode2.ffs'
+reference_pattern = 'lyceanem/NormalAntenna.ffe'
+distorted_pattern = 'lyceanem/DeformedAntenna.ffe'
 
 # %% set scene geometry
 radarGeo = RadarGeometry()
@@ -91,20 +93,35 @@ I, Ts = np.meshgrid(incidence, t)
 # time to azimuth (it is not the same A of above)
 I, A = mesh_incidence_time_to_incidence_azimuth(I, Ts, v_s, altitude)
 
+# %% plot settings
+fw = 3.43
+fh = fw / np.sqrt(2)
+fontsize = 8
+
 # %% plot antenna pattern on Incidence Doppler (rcmc'ed)
 fig, ax = plt.subplots(1)
 # puncture the indexes (one sample every 8)
 jj = np.arange(0, len(I[:, 0]), 8).astype('int')
 jj = np.argwhere(np.abs(D[:, 50]) < Bd * 3)[:, 0]
 c = ax.pcolormesh(I[jj, :] * 180 / np.pi, D[jj, :] * 1e-3,
-                  20 * np.log10(np.abs(G_dist[jj, :]) / np.max(np.abs(G_dist[jj, :]))), vmin=-60)
+                  20 * np.log10(np.abs(G_dist[jj, :]) / np.max(np.abs(G_dist[jj, :]))), vmin=-20, rasterized=True)
 ax.set_ylabel('Doppler shift [kHz]')
 ax.set_xlabel('incidence angle [deg]')
-fig.colorbar(c, ax=ax, label='[dB]')
+cbar = fig.colorbar(c, ax=ax, label='[dB]')
 # Bd lines
 ax.plot(np.array((incidence[0], incidence[-1])) * 180 / np.pi, np.ones(2) * Bd / 2e3, 'r')
 ax.plot(np.array((incidence[0], incidence[-1])) * 180 / np.pi, -np.ones(2) * Bd / 2e3, 'r', label='Bd')
 ax.legend()
+fig.set_figwidth(fw)
+fig.set_figheight(fh)
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label, ] +
+             ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(fontsize)
+for t in (cbar.ax.get_yticklabels() + [cbar.ax.yaxis.label]):
+    t.set_fontsize(fontsize)
+plt.tight_layout()
+plt.rcParams['svg.fonttype'] = 'none'
+fig.savefig("niceplotsforpaper/dist_on_doppler.svg", format="svg", dpi=600)
 plt.show()
 
 # %% plot antenna pattern on Incidence Doppler (rcmc'ed)
@@ -113,25 +130,42 @@ fig, ax = plt.subplots(1)
 jj = np.arange(0, len(I[:, 0]), 8).astype('int')
 jj = np.argwhere(np.abs(D[:, 50]) < Bd * 3)[:, 0]
 c = ax.pcolormesh(I[jj, :] * 180 / np.pi, D[jj, :] * 1e-3,
-                  20 * np.log10(np.abs(G_ref[jj, :]) / np.max(np.abs(G_ref[jj, :]))), vmin=-60)
+                  20 * np.log10(np.abs(G_ref[jj, :]) / np.max(np.abs(G_ref[jj, :]))), vmin=-20,
+                  rasterized=True)
 ax.set_ylabel('Doppler shift [kHz]')
 ax.set_xlabel('incidence angle [deg]')
-fig.colorbar(c, ax=ax, label='[dB]')
+cbar = fig.colorbar(c, ax=ax, label='[dB]')
 # Bd lines
 ax.plot(np.array((incidence[0], incidence[-1])) * 180 / np.pi, np.ones(2) * Bd / 2e3, 'r')
 ax.plot(np.array((incidence[0], incidence[-1])) * 180 / np.pi, -np.ones(2) * Bd / 2e3, 'r', label='Bd')
 ax.legend()
+fig.set_figwidth(fw)
+fig.set_figheight(fh)
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label, ] +
+             ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(fontsize)
+for t in (cbar.ax.get_yticklabels() + [cbar.ax.yaxis.label]):
+    t.set_fontsize(fontsize)
+plt.tight_layout()
+plt.rcParams['svg.fonttype'] = 'none'
+fig.savefig("niceplotsforpaper/ref_on_doppler.svg", format="svg", dpi=600)
+plt.show()
+
 plt.show()
 # %%
+
 fig, ax = plt.subplots(1)
 # slice the array to relevant bit
 jj = np.argwhere(np.abs(D[:, 50]) < Bd / 1.8)[:, 0]
-c = ax.pcolormesh(I[jj, :] * 180 / np.pi, D[jj, :], 20 * np.log10(np.abs(air[jj, :])))
+c = ax.pcolormesh(I[jj, :] * 180 / np.pi, D[jj, :], 20 * np.log10(np.abs(air[jj, :])),
+                  rasterized=True)
 fig.colorbar(c, ax=ax, label='[dB]')
 ax.set_ylim(-Bd / 1.9, Bd / 1.9)
 ax.set_ylabel('Doppler shift [Hz]')
 ax.set_xlabel('incidence angle [deg]')
 plt.show()
+
+
 # %% cut
 fig, ax = plt.subplots(1)
 ax.plot(A[:, 50], np.abs(AIR[:, 50]) / np.max(AIR[:, 50]), label='distorted antenna')
@@ -143,22 +177,48 @@ ax.set_xlim(-5, 5)
 plt.show()
 
 # %% cut but in dB
+
+
 fig, ax = plt.subplots(1)
 ax.plot(A[:, 50], 20 * np.log10(np.abs(AIR[:, 50]) / np.max(AIR[:, 50])), label='distorted antenna')
 ax.plot(A[:, 50], 20 * np.log10(np.abs(AIRR[:, 50])), '--', label='reference')
-ax.legend()
+ax.legend(loc='upper right', prop={"size": 8})
 ax.set_xlabel('ground azimuth [m]')
 ax.set_ylabel('normalized amplitude [dB]')
 ax.set_xlim(-5, 5)
 ax.set_ylim(-28, 0)
-plt.show()
 
+fig.set_figwidth(fw)
+fig.set_figheight(fh)
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label, ] +
+             ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(fontsize)
+plt.tight_layout()
+plt.show()
+plt.rcParams['svg.fonttype'] = 'none'
+fig.savefig("niceplotsforpaper/AIScut.svg", format="svg")
 # %%
 fig, ax = plt.subplots(1)
 # slice the output for ease of plotting
 ii = np.argwhere(np.abs(A[:, 50]) < 10)[:, 0]
-c = ax.pcolormesh(I[ii, :] * 180 / np.pi, A[ii, :], 20 * np.log10(np.abs(AIR[ii, :]) / np.max(np.abs(AIR[ii, :]))))
-fig.colorbar(c, ax=ax, label='[dB]')
+c = ax.pcolormesh(I[ii, :] * 180 / np.pi, A[ii, :], 20 * np.log10(np.abs(AIR[ii, :]) / np.max(np.abs(AIR[ii, :]))),
+                  rasterized=True)
+cbar = fig.colorbar(c, ax=ax, label='[dB]')
+
 ax.set_ylabel('ground azimuth [m]')
 ax.set_xlabel('incidence angle [deg]')
+fig.set_figwidth(fw)
+fig.set_figheight(fh)
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label, ] +
+             ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(fontsize)
+for t in (cbar.ax.get_yticklabels() + [cbar.ax.yaxis.label]):
+    t.set_fontsize(fontsize)
+plt.tight_layout()
+plt.rcParams['svg.fonttype'] = 'none'
+fig.savefig("niceplotsforpaper/AIS.svg", format="svg", dpi=600)
 plt.show()
+
+#%%%
+#last cell
+print('prrrrrrr')

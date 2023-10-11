@@ -17,14 +17,15 @@ altitude = 500e3
 # frequency
 f = 10e9
 # antenna length (or equivalent for 3db beamwidth)
-La = 2
+La = .2
 # speed of light
 c = 299792458.0
 # range swath
 swath = 100e3
-# pattern files
-reference_pattern = 'dummyReference.ffs'
-distorted_pattern = 'dummyDistortedMode2.ffs'
+# reference_pattern = 'dummyReference.ffs'
+# distorted_pattern = 'dummyDistortedMode2.ffs'
+reference_pattern = 'lyceanem/NormalAntenna.ffe'
+distorted_pattern = 'lyceanem/DeformedAntenna.ffe'
 
 # %% set scene geometry
 radarGeo = RadarGeometry()
@@ -100,16 +101,29 @@ SNR_core = (c / f) ** 2 * max_gain ** 2 * c * vg * numer / (
 # azimuth resolutions
 daz = vg / Bd
 
+# %% plot settings
+fw = 3.43
+fh = fw / np.sqrt(2)
+fontsize = 8
 # %% Plotting
-
 fig, ax = plt.subplots(1)
 ax.plot(incidence * 180 / np.pi, 10 * np.log10(SNR_core_ref), '--', label='reference')
 ax.plot(incidence * 180 / np.pi, 10 * np.log10(SNR_core), '--', label='distorted antenna')
-ax.legend()
+ax.legend(loc='upper right', prop={"size": 8})
 ax.set_xlabel('incidence angle [deg]')
 ax.set_ylabel('core SNR [dB]')
+fig.set_figwidth(fw)
+fig.set_figheight(fh)
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label, ] +
+             ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(fontsize)
+
+plt.tight_layout()
+plt.rcParams['svg.fonttype'] = 'none'
+fig.savefig("niceplotsforpaper/SNRdeg.svg", format="svg", dpi=600)
 plt.show()
 
+# %%
 fig, ax = plt.subplots(1)
 ax.plot(incidence * 180 / np.pi, (SNR_core_ref), '--', label='reference')
 ax.plot(incidence * 180 / np.pi, (SNR_core), '--', label='distorted antenna')
@@ -117,17 +131,26 @@ ax.legend()
 ax.set_xlabel('incidence angle [deg]')
 ax.set_ylabel('core SNR [neper]')
 plt.show()
-
+#%%
 rs, rg = range_from_theta(incidence * 180 / np.pi, altitude)
 
 fig, ax = plt.subplots(1)
 ax.plot(rg / 1000, 10 * np.log10(SNR_core_ref), '--', label='reference')
 ax.plot(rg / 1000, 10 * np.log10(SNR_core), '--', label='distorted antenna')
-ax.legend()
+ax.legend(loc='upper right', prop={"size": 8})
 ax.set_xlabel('ground range [km]')
 ax.set_ylabel('core SNR [dB]')
-plt.show()
+fig.set_figwidth(fw)
+fig.set_figheight(fh)
+for item in ([ax.title, ax.xaxis.label, ax.yaxis.label, ] +
+             ax.get_xticklabels() + ax.get_yticklabels()):
+    item.set_fontsize(fontsize)
 
+plt.tight_layout()
+plt.rcParams['svg.fonttype'] = 'none'
+fig.savefig("niceplotsforpaper/SNRm.svg", format="svg", dpi=600)
+plt.show()
+#%%
 fig, ax = plt.subplots(1)
 ax.plot(rg / 1000, (SNR_core_ref), '--', label='reference')
 ax.plot(rg / 1000, (SNR_core), '--', label='distorted antenna')

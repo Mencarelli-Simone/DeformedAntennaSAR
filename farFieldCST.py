@@ -85,9 +85,11 @@ def ffsLoader(filename):
     Theta = Theta.reshape((phiSamples, thetaSamples))
 
     return Phi, Theta, E_Phi, E_Theta, phiSamples, thetaSamples, radiatedPower, stimulatedPower, acceptedPower
+
+
 def ffeLoader(filename):
     # %% variables to read from file
-    #filename = 'EyPattern_NoDistortion.ffe'
+    # filename = 'EyPattern_NoDistortion.ffe'
     # header
     frequencies = 0
     position = [0, 0, 0]
@@ -127,14 +129,14 @@ def ffeLoader(filename):
             frequency = float(content[i][id + 2:])
         if "#No. of Theta Samples: " in content[i]:
             id = content[i].find(": ")
-            thetaSamples = int(content[i][id+2:])
+            thetaSamples = int(content[i][id + 2:])
         if "#No. of Phi Samples: " in content[i]:
             id = content[i].find(": ")
-            phiSamples = int(content[i][id+2:])
+            phiSamples = int(content[i][id + 2:])
             break
 
     # %% data parsing
-    # Phi, Theta, Re(E_Theta), Im(E_Theta), Re(E_Phi), Im(E_Phi)
+    # Theta, Phi, Re(E_Theta), Im(E_Theta), Re(E_Phi), Im(E_Phi)
     dataMatrix = np.zeros((phiSamples * thetaSamples, 9))
 
     for i in range(len(content)):
@@ -142,7 +144,7 @@ def ffeLoader(filename):
             for j in range(phiSamples * thetaSamples):
                 dataline = content[i + j + 1]
                 dataline = dataline.split(" ")
-                if len(dataline) < 9 :  # eof
+                if len(dataline) < 9:  # eof
                     print('eof')
                     break
                 else:
@@ -163,7 +165,15 @@ def ffeLoader(filename):
     Phi = Phi.reshape((phiSamples, thetaSamples))
     Theta = dataMatrix[:, 0]
     Theta = Theta.reshape((phiSamples, thetaSamples))
-
+    ## todo comment this if the ffe files are fixed
+    #E_Theta = np.flip(E_Theta,0)
+    E_Phi = np.flip(E_Phi, 0)
+    D_tot = dataMatrix[:, 8]
+    D_tot = D_tot.reshape((phiSamples, thetaSamples))
+    # radiated power
+    G = 2 * np.pi * (np.abs(E_Theta) ** 2 + np.abs(E_Phi) ** 2) / (120 * np.pi * radiatedPower)
+    norm = np.max(D_tot) / np.max(G)
+    radiatedPower = 1. / norm
     return Phi, Theta, E_Phi, E_Theta, phiSamples, thetaSamples, radiatedPower, stimulatedPower, acceptedPower
 
 
@@ -180,9 +190,10 @@ class Aperture:
             (Phi, Theta, E_Phi, E_Theta, phiSamples, thetaSamples,
              radiatedPower, stimulatedPower, acceptedPower) = ffsLoader(filename)
         elif filename[-4:].lower() == '.ffe':
+            print('loading ffe pattern')
             # load far field
             (Phi, Theta, E_Phi, E_Theta, phiSamples, thetaSamples,
-             radiatedPower, stimulatedPower, acceptedPower) = ffsLoader(filename)
+             radiatedPower, stimulatedPower, acceptedPower) = ffeLoader(filename)
         else:
             print('Error: file extension unknown')
 
@@ -242,7 +253,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     # 1 create an aperture with the farfield file
-    antenna = Aperture('dummyReference.ffs')
+    antenna = Aperture('lyceanem/NormalAntenna.ffe')
     #  Pass
 
     # 2 plot the original datum

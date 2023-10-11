@@ -11,7 +11,7 @@ import numpy as np
 filename = 'farfield.ffs'
 
 # %% variables to read from file
-filename = 'EyPattern_NoDistortion.ffe'
+filename = 'lyceanem/DeformedAntenna.ffe'
 # header
 frequencies = 0
 position = [0, 0, 0]
@@ -90,7 +90,10 @@ Theta = Theta.reshape((phiSamples, thetaSamples))
 
 D_tot = dataMatrix[:, 8]
 D_tot = D_tot.reshape((phiSamples, thetaSamples))
-
+# radiated power
+G = 2 * np.pi * (np.abs(E_Theta) ** 2 + np.abs(E_Phi) ** 2) / (120 * np.pi * radiatedPower)
+norm = np.max(D_tot) / np.max(G)
+radiatedPower = 1. / norm
 # plot
 fig, ax = plt.subplots(1)
 ax.contourf(Theta, Phi, 10 * np.log10(np.abs(E_Theta ** 2 + E_Phi ** 2)))
@@ -99,20 +102,22 @@ plt.show()
 # %% we assume the cross polarization has no effect and define the directive gain as
 
 G = 2 * np.pi * (np.abs(E_Theta) ** 2 + np.abs(E_Phi) ** 2) / (120 * np.pi * radiatedPower)
+
 fig, ax = plt.subplots(1)
-c = ax.pcolormesh(Theta, Phi, (G))
-fig.colorbar(c, ax=ax, label='[neper]')
+c = ax.pcolormesh(Theta, Phi, 10 * np.log10(G))
+fig.colorbar(c, ax=ax, label='[dB]')
+ax.set_title('G')
 ax.set_xlabel('$\Theta$')
 ax.set_ylabel('$\phi$')
 plt.show()
 # %%
 fig, ax = plt.subplots(1)
-c = ax.pcolormesh(Theta, Phi, (D_tot))
-fig.colorbar(c, ax=ax, label='[neper]')
+c = ax.pcolormesh(Theta, Phi, 10 * np.log10((D_tot)))
+fig.colorbar(c, ax=ax, label='[dB]')
 ax.set_xlabel('$\Theta$')
 ax.set_ylabel('$\phi$')
+ax.set_title('Dtot')
 plt.show()
-
 
 # %% total power ? if the radius is 1
 dtheta = (np.max(Theta) - np.min(Theta)) / thetaSamples * np.pi / 180

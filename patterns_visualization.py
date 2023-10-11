@@ -8,18 +8,18 @@ from farFieldCST import Aperture
 import matplotlib.pyplot as plt
 import matplotlib
 
-#matplotlib.use('Qt5Agg')
+matplotlib.use('Qt5Agg')
 
 # %% User input
-reference_pattern = 'dummyReference.ffs'
-distorted_pattern = 'dummyDistortedMode2.ffs'
+reference_pattern = 'lyceanem/NormalAntenna.ffe'
+distorted_pattern = 'lyceanem/DeformedAntenna.ffe'
 
 # %% load patterns
 ant_ref = Aperture(reference_pattern)
 ant_dist = Aperture(distorted_pattern)
 
 # %% plot gain in main cuts
-theta = np.linspace(-5 * np.pi / 180, 5* np.pi / 180, 2501)
+theta = np.linspace(-90 * np.pi / 180, 90* np.pi / 180, 2501)
 phi_E = np.array(0)
 phi_H = np.array(np.pi / 2)
 # E cut
