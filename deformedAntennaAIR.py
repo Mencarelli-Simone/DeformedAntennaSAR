@@ -200,7 +200,7 @@ fig.savefig("niceplotsforpaper/AIScut.svg", format="svg")
 # %%
 fig, ax = plt.subplots(1)
 # slice the output for ease of plotting
-ii = np.argwhere(np.abs(A[:, 50]) < 4)[:, 0]
+ii = np.argwhere(np.abs(A[:, 50]) <1 )[:, 0]
 c = ax.pcolormesh(I[ii, :] * 180 / np.pi, A[ii, :], 20 * np.log10(np.abs(AIR[ii, :]) / np.max(np.abs(AIR[ii, :]))),
                   rasterized=True)
 cbar = fig.colorbar(c, ax=ax, label='[dB]')
