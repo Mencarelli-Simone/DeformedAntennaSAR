@@ -46,9 +46,9 @@ def meshSph2cart(r_mesh, theta_mesh, phi_mesh):
     rows, columns = r_mesh.shape
     for rr in prange(rows):
         for cc in prange(columns):
-            x = r_mesh[rr, cc] * np.sin(theta_mesh[rr, cc]) * np.cos(phi_mesh[rr, cc])
-            y = r_mesh[rr, cc] * np.sin(theta_mesh[rr, cc]) * np.sin(phi_mesh[rr, cc])
-            z = r_mesh[rr, cc] * np.cos(theta_mesh[rr, cc])
+            x[rr, cc] = r_mesh[rr, cc] * np.sin(theta_mesh[rr, cc]) * np.cos(phi_mesh[rr, cc])
+            y[rr, cc] = r_mesh[rr, cc] * np.sin(theta_mesh[rr, cc]) * np.sin(phi_mesh[rr, cc])
+            z[rr, cc] = r_mesh[rr, cc] * np.cos(theta_mesh[rr, cc])
 
     return x, y, z
 

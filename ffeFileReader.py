@@ -11,7 +11,7 @@ import numpy as np
 filename = 'farfield.ffs'
 
 # %% variables to read from file
-filename = 'lyceanem/DeformedAntenna.ffe'
+filename = 'lyceanem/DeformedAntennav2.ffe'
 # header
 frequencies = 0
 position = [0, 0, 0]
